@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
 :root {
+  --brand-bg: #1a1a1a;
+  --brand-surface: #242424;
+  --brand-border: #3a3a3a;
+  --brand-orange-dark: #ea580c;
+  --brand-orange: #f97316;
+  --brand-yellow: #fbbf24;
+  --brand-gradient: linear-gradient(135deg, var(--brand-orange-dark), var(--brand-yellow));
   --background: #ffffff;
   --foreground: #171717;
 }
