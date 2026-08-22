@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { sumMacros } from '@/lib/dietPlanMacros'
 
 type MealItemPayload = {
   food_id: number | null
@@ -22,13 +23,10 @@ type DietPlanPayload = {
   choice_number: number
   total_calories: number | null
   veg_type: number | null
-  header: string
-  frequency_note: string
-  diet_notes: string
-  workout_notes: string
-  remarks: string
   workout_identifier: string
   workout_plan_id: string | null
+  diet_notes: string
+  workout_notes: string
   meals: MealPayload[]
 }
 
@@ -64,6 +62,33 @@ async function insertMeals(admin: ReturnType<typeof createAdminClient>, dietPlan
   }
 }
 
+async function computeTotals(admin: ReturnType<typeof createAdminClient>, meals: MealPayload[]) {
+  const foodIds = Array.from(
+    new Set(meals.flatMap((m) => m.items.map((it) => it.food_id).filter((id): id is number => id != null)))
+  )
+
+  const foodsById: Record<number, any> = {}
+  if (foodIds.length > 0) {
+    const { data: foods } = await admin
+      .from('foods')
+      .select('id, quantity, unit, carbs, protein, fats, sugar, fiber, calories, rich_in')
+      .in('id', foodIds)
+
+    for (const food of foods ?? []) {
+      foodsById[food.id] = food
+    }
+  }
+
+  const items = meals.flatMap((m) =>
+    m.items.map((it) => ({
+      food: it.food_id != null ? foodsById[it.food_id] ?? null : null,
+      quantity: it.quantity,
+    }))
+  )
+
+  return sumMacros(items)
+}
+
 export async function createDietPlan(formData: FormData) {
   const raw = formData.get('payload') as string
   const payload: DietPlanPayload = JSON.parse(raw)
@@ -74,6 +99,7 @@ export async function createDietPlan(formData: FormData) {
   } = await supabase.auth.getUser()
 
   const admin = createAdminClient()
+  const totals = await computeTotals(admin, payload.meals)
 
   const { data: dietPlan, error: dietPlanError } = await admin
     .from('diet_plans')
@@ -83,14 +109,16 @@ export async function createDietPlan(formData: FormData) {
       week_number: payload.week_number,
       choice_number: payload.choice_number,
       total_calories: payload.total_calories,
+      total_carbs: totals.carbs,
+      total_protein: totals.protein,
+      total_fats: totals.fats,
+      total_sugar: totals.sugar,
+      total_fiber: totals.fiber,
       veg_type: payload.veg_type,
-      header: payload.header || null,
-      frequency_note: payload.frequency_note || null,
-      diet_notes: payload.diet_notes || null,
-      workout_notes: payload.workout_notes || null,
-      remarks: payload.remarks || null,
       workout_identifier: payload.workout_identifier || null,
       workout_plan_id: payload.workout_plan_id || null,
+      diet_notes: payload.diet_notes || null,
+      workout_notes: payload.workout_notes || null,
     })
     .select('id')
     .single()
@@ -100,6 +128,7 @@ export async function createDietPlan(formData: FormData) {
   await insertMeals(admin, dietPlan.id, payload.meals)
 
   revalidatePath(`/admin/clients/${payload.person_id}`)
+  revalidatePath('/admin/diet-plans')
   redirect(`/admin/clients/${payload.person_id}`)
 }
 
@@ -108,6 +137,7 @@ export async function updateDietPlan(dietPlanId: string, formData: FormData) {
   const payload: DietPlanPayload = JSON.parse(raw)
 
   const admin = createAdminClient()
+  const totals = await computeTotals(admin, payload.meals)
 
   const { error: updateError } = await admin
     .from('diet_plans')
@@ -115,14 +145,16 @@ export async function updateDietPlan(dietPlanId: string, formData: FormData) {
       week_number: payload.week_number,
       choice_number: payload.choice_number,
       total_calories: payload.total_calories,
+      total_carbs: totals.carbs,
+      total_protein: totals.protein,
+      total_fats: totals.fats,
+      total_sugar: totals.sugar,
+      total_fiber: totals.fiber,
       veg_type: payload.veg_type,
-      header: payload.header || null,
-      frequency_note: payload.frequency_note || null,
-      diet_notes: payload.diet_notes || null,
-      workout_notes: payload.workout_notes || null,
-      remarks: payload.remarks || null,
       workout_identifier: payload.workout_identifier || null,
       workout_plan_id: payload.workout_plan_id || null,
+      diet_notes: payload.diet_notes || null,
+      workout_notes: payload.workout_notes || null,
     })
     .eq('id', dietPlanId)
 
@@ -147,6 +179,7 @@ export async function updateDietPlan(dietPlanId: string, formData: FormData) {
   await insertMeals(admin, dietPlanId, payload.meals)
 
   revalidatePath(`/admin/diet-plans/${dietPlanId}`)
+  revalidatePath('/admin/diet-plans')
   redirect(`/admin/diet-plans/${dietPlanId}`)
 }
 
@@ -164,5 +197,6 @@ export async function deleteDietPlan(dietPlanId: string, personId: string) {
   await admin.from('diet_plans').delete().eq('id', dietPlanId)
 
   revalidatePath(`/admin/clients/${personId}`)
+  revalidatePath('/admin/diet-plans')
   redirect(`/admin/clients/${personId}`)
 }

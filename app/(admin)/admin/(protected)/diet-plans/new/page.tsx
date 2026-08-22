@@ -41,7 +41,7 @@ export default async function NewDietPlanPage({
     const { data: sourcePlan } = await admin
       .from('diet_plans')
       .select(
-        'id, week_number, choice_number, total_calories, veg_type, header, frequency_note, diet_notes, workout_notes, remarks, workout_identifier, workout_plan_id'
+        'id, week_number, choice_number, total_calories, veg_type, diet_notes, workout_notes, workout_identifier, workout_plan_id'
       )
       .eq('id', clone_from)
       .single()
@@ -78,11 +78,8 @@ export default async function NewDietPlanPage({
         choice_number: sourcePlan.choice_number ?? 1,
         total_calories: sourcePlan.total_calories,
         veg_type: sourcePlan.veg_type,
-        header: sourcePlan.header ?? '',
-        frequency_note: sourcePlan.frequency_note ?? '',
         diet_notes: sourcePlan.diet_notes ?? '',
         workout_notes: sourcePlan.workout_notes ?? '',
-        remarks: sourcePlan.remarks ?? '',
         workout_identifier: sourcePlan.workout_identifier ?? '',
         workout_plan_id: sourcePlan.workout_plan_id,
         meals,

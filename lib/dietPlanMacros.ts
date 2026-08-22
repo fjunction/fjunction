@@ -37,4 +37,35 @@ export function scaleFoodMacros(food: FoodMacroSource, itemQuantity: number | nu
     unit: food.unit,
     rich_in: food.rich_in,
   }
+  
+}
+
+export function sumMacros(
+  items: { food: FoodMacroSource; quantity: number | null }[]
+) {
+  let calories = 0
+  let carbs = 0
+  let protein = 0
+  let fats = 0
+  let sugar = 0
+  let fiber = 0
+
+  for (const { food, quantity } of items) {
+    const macros = scaleFoodMacros(food, quantity)
+    calories += macros.calories ?? 0
+    carbs += macros.carbs ?? 0
+    protein += macros.protein ?? 0
+    fats += macros.fats ?? 0
+    sugar += macros.sugar ?? 0
+    fiber += macros.fiber ?? 0
+  }
+
+  return {
+    calories: Math.round(calories),
+    carbs: Math.round(carbs),
+    protein: Math.round(protein),
+    fats: Math.round(fats),
+    sugar: Math.round(sugar),
+    fiber: Math.round(fiber),
+  }
 }

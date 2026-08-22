@@ -13,7 +13,7 @@ export default async function EditDietPlanPage({ params }: { params: Promise<{ i
   const { data: dietPlan, error } = await admin
     .from('diet_plans')
     .select(
-      'id, person_id, week_number, choice_number, total_calories, veg_type, header, frequency_note, diet_notes, workout_notes, remarks, workout_identifier, workout_plan_id'
+      'id, person_id, week_number, choice_number, total_calories, veg_type, diet_notes, workout_notes, workout_identifier, workout_plan_id'
     )
     .eq('id', id)
     .single()
@@ -79,11 +79,8 @@ export default async function EditDietPlanPage({ params }: { params: Promise<{ i
           choice_number: dietPlan.choice_number,
           total_calories: dietPlan.total_calories,
           veg_type: dietPlan.veg_type,
-          header: dietPlan.header ?? '',
-          frequency_note: dietPlan.frequency_note ?? '',
           diet_notes: dietPlan.diet_notes ?? '',
           workout_notes: dietPlan.workout_notes ?? '',
-          remarks: dietPlan.remarks ?? '',
           workout_identifier: dietPlan.workout_identifier ?? '',
           workout_plan_id: dietPlan.workout_plan_id,
           meals,

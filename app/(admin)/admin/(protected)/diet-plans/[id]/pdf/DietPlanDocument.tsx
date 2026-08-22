@@ -19,6 +19,8 @@ const styles = StyleSheet.create({
   headerCell: { fontWeight: 700 },
   notesText: { marginBottom: 4, lineHeight: 1.4 },
   sectionTitle: { fontSize: 12, fontWeight: 700, marginBottom: 4 },
+  summaryBox: { marginTop: 16, padding: 10, border: '1pt solid #f59e0b', borderRadius: 4 },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 },
 })
 
 const VEG_LABELS: Record<number, string> = { 0: 'Veg', 1: 'Non-Veg', 2: 'Eggetarian' }
@@ -34,26 +36,33 @@ type Item = {
   rich_in: string | null
 }
 type Meal = { label: string | null; items: Item[] }
+type Totals = {
+  calories: number
+  carbs: number
+  protein: number
+  fats: number
+  sugar: number
+  fiber: number
+}
 type DietPlan = {
-  header: string | null
   week_number: number | null
   choice_number: number | null
   total_calories: number | null
   veg_type: number | null
-  frequency_note: string | null
   diet_notes: string | null
   workout_notes: string | null
-  remarks: string | null
   people?: { name: string } | null
 }
 
 export function DietPlanDocument({
   dietPlan,
   meals,
+  totals,
   logoBuffer,
 }: {
   dietPlan: DietPlan
   meals: Meal[]
+  totals: Totals
   logoBuffer: Buffer | null
 }) {
   return (
@@ -77,10 +86,17 @@ export function DietPlanDocument({
           </Text>
         )}
 
-        {dietPlan.frequency_note && (
+        {dietPlan.diet_notes && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Frequency</Text>
-            <Text style={styles.notesText}>{dietPlan.frequency_note}</Text>
+            <Text style={styles.sectionTitle}>Diet Notes</Text>
+            <Text style={styles.notesText}>{dietPlan.diet_notes}</Text>
+          </View>
+        )}
+
+        {dietPlan.workout_notes && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Workout Notes</Text>
+            <Text style={styles.notesText}>{dietPlan.workout_notes}</Text>
           </View>
         )}
 
@@ -119,26 +135,33 @@ export function DietPlanDocument({
           </View>
         ))}
 
-        {dietPlan.diet_notes && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Diet Notes</Text>
-            <Text style={styles.notesText}>{dietPlan.diet_notes}</Text>
+        <View style={styles.summaryBox} wrap={false}>
+          <Text style={[styles.sectionTitle, { marginBottom: 6 }]}>Plan Summary</Text>
+          <View style={styles.summaryRow}>
+            <Text>Calories</Text>
+            <Text>{totals.calories} kcal</Text>
           </View>
-        )}
-
-        {dietPlan.workout_notes && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Workout Notes</Text>
-            <Text style={styles.notesText}>{dietPlan.workout_notes}</Text>
+          <View style={styles.summaryRow}>
+            <Text>Carbs</Text>
+            <Text>{totals.carbs} g</Text>
           </View>
-        )}
-
-        {dietPlan.remarks && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Remarks</Text>
-            <Text style={styles.notesText}>{dietPlan.remarks}</Text>
+          <View style={styles.summaryRow}>
+            <Text>Protein</Text>
+            <Text>{totals.protein} g</Text>
           </View>
-        )}
+          <View style={styles.summaryRow}>
+            <Text>Fats</Text>
+            <Text>{totals.fats} g</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text>Sugar</Text>
+            <Text>{totals.sugar} g</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text>Fiber</Text>
+            <Text>{totals.fiber} g</Text>
+          </View>
+        </View>
       </Page>
     </Document>
   )

@@ -46,11 +46,8 @@ type InitialData = {
   choice_number?: number
   total_calories?: number | null
   veg_type?: number | null
-  header?: string
-  frequency_note?: string
   diet_notes?: string
   workout_notes?: string
-  remarks?: string
   workout_identifier?: string
   workout_plan_id?: string | null
   meals?: MealState[]
@@ -93,11 +90,8 @@ export function DietPlanBuilder({
   const [choiceNumber, setChoiceNumber] = useState(initial?.choice_number ?? 1)
   const [totalCalories, setTotalCalories] = useState<number | ''>(initial?.total_calories ?? '')
   const [vegType, setVegType] = useState<number | ''>(initial?.veg_type ?? '')
-  const [header, setHeader] = useState(initial?.header ?? '')
-  const [frequencyNote, setFrequencyNote] = useState(initial?.frequency_note ?? '')
   const [dietNotes, setDietNotes] = useState(initial?.diet_notes ?? '')
   const [workoutNotes, setWorkoutNotes] = useState(initial?.workout_notes ?? '')
-  const [remarks, setRemarks] = useState(initial?.remarks ?? '')
   const [workoutIdentifier, setWorkoutIdentifier] = useState(initial?.workout_identifier ?? '')
   const [workoutPlanId, setWorkoutPlanId] = useState(initial?.workout_plan_id ?? '')
   const [meals, setMeals] = useState<MealState[]>(
@@ -201,11 +195,8 @@ export function DietPlanBuilder({
         choice_number: Number(choiceNumber),
         total_calories: totalCalories === '' ? null : Number(totalCalories),
         veg_type: vegType === '' ? null : Number(vegType),
-        header,
-        frequency_note: frequencyNote,
         diet_notes: dietNotes,
         workout_notes: workoutNotes,
-        remarks,
         workout_identifier: workoutIdentifier,
         workout_plan_id: workoutPlanId || null,
         meals: meals.map((m) => ({
@@ -302,16 +293,6 @@ export function DietPlanBuilder({
           </div>
 
           <div>
-            <label style={labelStyle}>Header</label>
-            <input value={header} onChange={(e) => setHeader(e.target.value)} style={inputStyle} />
-          </div>
-
-          <div>
-            <label style={labelStyle}>Frequency Note</label>
-            <input value={frequencyNote} onChange={(e) => setFrequencyNote(e.target.value)} style={inputStyle} />
-          </div>
-
-          <div>
             <label style={labelStyle}>Diet Notes</label>
             <textarea value={dietNotes} onChange={(e) => setDietNotes(e.target.value)} style={inputStyle} />
           </div>
@@ -319,11 +300,6 @@ export function DietPlanBuilder({
           <div>
             <label style={labelStyle}>Workout Notes</label>
             <textarea value={workoutNotes} onChange={(e) => setWorkoutNotes(e.target.value)} style={inputStyle} />
-          </div>
-
-          <div>
-            <label style={labelStyle}>Remarks</label>
-            <textarea value={remarks} onChange={(e) => setRemarks(e.target.value)} style={inputStyle} />
           </div>
 
           <div>
