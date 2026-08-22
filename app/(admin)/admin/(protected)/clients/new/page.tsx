@@ -2,6 +2,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { addClient } from '../actions'
 import { AddClientForm } from './AddClientForm'
 
+export const metadata = {
+    title: 'Add Client',
+  }
+
 export default async function NewClientPage() {
   const admin = createAdminClient()
 
@@ -21,7 +25,7 @@ export default async function NewClientPage() {
   }
 
   return (
-    <main style={{ padding: 24, color: '#fff', maxWidth: 480 }}>
+    <main style={{ padding: 24, color: '#fff', maxWidth: 640 }}>
       <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 16 }}>Add Client</h1>
       <AddClientForm action={addClient} planTypes={planTypes ?? []} />
     </main>

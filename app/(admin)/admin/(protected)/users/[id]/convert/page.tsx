@@ -2,6 +2,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { convertToClient } from '../../actions'
 import { ConvertForm } from './ConvertForm'
 
+export const metadata = {
+  title: 'Convert to Clients',
+}
+
 export default async function ConvertPage({
   params,
   searchParams,
@@ -45,7 +49,7 @@ export default async function ConvertPage({
   const convertPersonAction = convertToClient.bind(null, person.id)
 
   return (
-    <main style={{ padding: 24, color: '#fff', maxWidth: 480 }}>
+    <main style={{ padding: 24, color: '#fff', maxWidth: 640 }}>
     {notice === 'duplicate_email' && (
       <div
         style={{

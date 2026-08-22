@@ -2,6 +2,10 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { addClientNote } from './actions'
 
+export const metadata = {
+    title: 'Client Details',
+  }
+
 export default async function ClientDetailPage({
     params,
     searchParams,

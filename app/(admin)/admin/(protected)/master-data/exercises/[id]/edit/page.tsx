@@ -2,6 +2,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { updateExercise } from '../../actions'
 import { ExerciseFields } from '../../ExerciseFields'
 
+export const metadata = {
+  title: 'Edit Exercise Details',
+}
+
 export default async function EditExercisePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const admin = createAdminClient()
@@ -19,7 +23,7 @@ export default async function EditExercisePage({ params }: { params: Promise<{ i
   const updateExerciseWithId = updateExercise.bind(null, exercise.id)
 
   return (
-    <main style={{ padding: 24, color: '#fff', maxWidth: 480 }}>
+    <main style={{ padding: 24, color: '#fff', maxWidth: 640 }}>
       <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 16 }}>Edit Exercise</h1>
       <form action={updateExerciseWithId} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <ExerciseFields defaults={exercise} />

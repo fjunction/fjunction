@@ -1,6 +1,10 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+export const metadata = {
+  title: 'User Management',
+}
+
 export default async function UsersPage({
   searchParams,
 }: {

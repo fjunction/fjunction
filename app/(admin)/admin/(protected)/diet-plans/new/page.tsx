@@ -2,6 +2,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createDietPlan } from '../actions'
 import { DietPlanBuilder } from '../DietPlanBuilder'
 
+export const metadata = {
+    title: 'New Diet Plan',
+  }
+
 export default async function NewDietPlanPage({
   searchParams,
 }: {
@@ -11,9 +15,9 @@ export default async function NewDietPlanPage({
   const admin = createAdminClient()
 
   const { data: foods } = await admin
-    .from('foods')
-    .select('id, name, calories, protein, unit')
-    .order('name', { ascending: true })
+  .from('foods')
+  .select('id, name, calories, protein, carbs, fats, sugar, fiber, quantity, unit, rich_in')
+  .order('name', { ascending: true })
 
   const { data: people } = await admin
     .from('people')
@@ -87,7 +91,7 @@ export default async function NewDietPlanPage({
   }
 
   return (
-    <main style={{ padding: 24, color: '#fff', maxWidth: 640 }}>
+    <main style={{ padding: 24, color: '#fff' }}>
       <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 16 }}>
         {clone_from ? 'Clone Diet Plan' : 'New Diet Plan'}
       </h1>

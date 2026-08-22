@@ -2,6 +2,10 @@ import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { deleteExercise } from './actions'
 
+export const metadata = {
+  title: 'Excercises',
+}
+
 function exerciseImageUrl(path: string | null) {
   if (!path) return null
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${path}`

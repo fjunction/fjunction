@@ -1,5 +1,9 @@
 import Link from 'next/link'
 
+export const metadata = {
+  title: 'Master Data Management',
+}
+
 const SECTIONS = [
   { href: '/admin/master-data/plan-types', label: 'Plan Types' },
   { href: '/admin/master-data/foods', label: 'Foods' },

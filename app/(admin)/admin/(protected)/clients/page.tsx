@@ -2,6 +2,10 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import Link from 'next/link'
 
+export const metadata = {
+  title: 'Clients',
+}
+
 function isAdminEmail(email: string | null | undefined) {
   if (!email) return false
   const admins = (process.env.ADMIN_EMAILS ?? '')

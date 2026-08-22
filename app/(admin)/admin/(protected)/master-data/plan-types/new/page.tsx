@@ -3,7 +3,7 @@ import { PlanTypeFields } from '../PlanTypeFields'
 
 export default function NewPlanTypePage() {
   return (
-    <main style={{ padding: 24, color: '#fff', maxWidth: 480 }}>
+    <main style={{ padding: 24, color: '#fff', maxWidth: 640 }}>
       <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 16 }}>Add Plan Type</h1>
       <form action={createPlanType} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <PlanTypeFields />

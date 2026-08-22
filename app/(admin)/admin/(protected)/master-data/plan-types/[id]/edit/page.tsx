@@ -19,7 +19,7 @@ export default async function EditPlanTypePage({ params }: { params: Promise<{ i
   const updatePlanTypeWithId = updatePlanType.bind(null, planType.id)
 
   return (
-    <main style={{ padding: 24, color: '#fff', maxWidth: 480 }}>
+    <main style={{ padding: 24, color: '#fff', maxWidth: 640 }}>
       <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 16 }}>Edit Plan Type</h1>
       <form action={updatePlanTypeWithId} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <PlanTypeFields defaults={planType} />

@@ -1,9 +1,13 @@
 import { createExercise } from '../actions'
 import { ExerciseFields } from '../ExerciseFields'
 
+export const metadata = {
+  title: 'Add New Exercise',
+}
+
 export default function NewExercisePage() {
   return (
-    <main style={{ padding: 24, color: '#fff', maxWidth: 480 }}>
+    <main style={{ padding: 24, color: '#fff', maxWidth: 640 }}>
       <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 16 }}>Add Exercise</h1>
       <form action={createExercise} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <ExerciseFields />
