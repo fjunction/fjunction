@@ -2,8 +2,15 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { convertToClient } from '../../actions'
 import { ConvertForm } from './ConvertForm'
 
-export default async function ConvertPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ConvertPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ notice?: string }>
+}) {
   const { id } = await params
+  const { notice } = await searchParams
   const admin = createAdminClient()
 
   const { data: person, error: personError } = await admin
@@ -39,7 +46,21 @@ export default async function ConvertPage({ params }: { params: Promise<{ id: st
 
   return (
     <main style={{ padding: 24, color: '#fff', maxWidth: 480 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 4 }}>Convert to Client</h1>
+    {notice === 'duplicate_email' && (
+      <div
+        style={{
+          padding: '10px 16px',
+          borderRadius: 8,
+          background: 'var(--brand-surface)',
+          border: '1px solid var(--brand-yellow)',
+          color: 'var(--brand-yellow)',
+          marginBottom: 16,
+        }}
+      >
+        That email already belonged to this person — showing their existing record instead of creating a duplicate.
+      </div>
+    )}
+    <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 4 }}>Convert to Client</h1>
       <p style={{ color: '#888', marginBottom: 16 }}>{person.name}</p>
 
       <ConvertForm action={convertPersonAction} planTypes={planTypes ?? []} />

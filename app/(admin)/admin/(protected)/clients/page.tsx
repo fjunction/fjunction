@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import Link from 'next/link'
 
 function isAdminEmail(email: string | null | undefined) {
   if (!email) return false
@@ -81,12 +82,12 @@ export default async function ClientsPage({
 
   const clientIds = (clients ?? []).map((c) => c.id)
 
-  const plansByPerson: Record<string, { count: number; lastDate: string | null; active: boolean }> = {}
+  const plansByPerson: Record<string, { count: number; lastDate: string | null; active: boolean; addedDate: string | null }> = {}
 
   if (clientIds.length > 0) {
     const { data: plans, error: plansError } = await admin
     .from('plans')
-    .select('person_id, start_date, is_active')
+    .select('person_id, start_date, is_active, duration_days, created_at')
     .order('start_date', { ascending: false })
 
       if (plansError) {
@@ -98,22 +99,64 @@ export default async function ClientsPage({
         )
       }
 
-    for (const plan of plans ?? []) {
-      const entry = plansByPerson[plan.person_id] ?? {
-        count: 0,
-        lastDate: null,
-        active: false,
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+  
+      for (const plan of plans ?? []) {
+        const entry = plansByPerson[plan.person_id] ?? {
+          count: 0,
+          lastDate: null,
+          active: false,
+          addedDate: null,
+        }
+        entry.count += 1
+        if (!entry.lastDate) entry.lastDate = plan.start_date
+        if (!entry.addedDate || new Date(plan.created_at) > new Date(entry.addedDate)) {
+          entry.addedDate = plan.created_at
+        }
+  
+        if (plan.start_date && plan.duration_days != null) {
+          const start = new Date(plan.start_date)
+          const end = new Date(start)
+          end.setDate(end.getDate() + plan.duration_days)
+          if (end >= today) entry.active = true
+        }
+  
+        plansByPerson[plan.person_id] = entry
       }
-      entry.count += 1
-      if (!entry.lastDate) entry.lastDate = plan.start_date
-      if (plan.is_active) entry.active = true
-      plansByPerson[plan.person_id] = entry
-    }
   }
+
+  const sortedClients = [...(clients ?? [])].sort((a, b) => {
+    const aInfo = plansByPerson[a.id] ?? { active: false, addedDate: null }
+    const bInfo = plansByPerson[b.id] ?? { active: false, addedDate: null }
+
+    if (aInfo.active !== bInfo.active) {
+      return aInfo.active ? -1 : 1
+    }
+
+    const aTime = aInfo.addedDate ? new Date(aInfo.addedDate).getTime() : 0
+    const bTime = bInfo.addedDate ? new Date(bInfo.addedDate).getTime() : 0
+    return bTime - aTime
+  })
 
   return (
     <main style={{ padding: 24, color: '#fff', background: 'var(--brand-bg)', minHeight: '100vh' }}>
-      <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 16 }}>Clients</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 600 }}>Clients</h1>
+        <Link
+          href="/admin/clients/new"
+          style={{
+            padding: '8px 14px',
+            borderRadius: 8,
+            background: 'var(--brand-gradient)',
+            color: '#fff',
+            fontWeight: 600,
+            textDecoration: 'none',
+          }}
+        >
+          + Add Client
+        </Link>
+      </div>
 
       <form method="GET" style={{ marginBottom: 20 }}>
         <input
@@ -155,10 +198,11 @@ export default async function ClientsPage({
             <th style={{ padding: '8px 12px' }}>Active Plan</th>
             <th style={{ padding: '8px 12px' }}>Plan Count</th>
             <th style={{ padding: '8px 12px' }}>Last Plan Date</th>
+            <th style={{ padding: '8px 12px' }}>Action</th>
           </tr>
         </thead>
         <tbody>
-          {(clients ?? []).map((client) => {
+        {sortedClients.map((client) => {
             const planInfo = plansByPerson[client.id] ?? {
               count: 0,
               lastDate: null,
@@ -166,8 +210,15 @@ export default async function ClientsPage({
             }
             return (
               <tr key={client.id} style={{ borderBottom: '1px solid var(--brand-border)' }}>
-                <td style={{ padding: '8px 12px' }}>{client.name}</td>
-                <td style={{ padding: '8px 12px' }}>{client.phone || client.email || '—'}</td>
+                <td style={{ padding: '8px 12px' }}>
+                  <Link href={`/admin/clients/${client.id}`} style={{ color: '#fff' }}>
+                    {client.name}
+                  </Link>
+                </td>
+                <td style={{ padding: '8px 12px' }}>
+                  {client.email || '—'}
+                  {client.phone && <div style={{ fontSize: 12, color: '#888' }}>{client.phone}</div>}
+                </td>
                 <td style={{ padding: '8px 12px' }}>
                   {planInfo.active ? (
                     <span style={{ color: 'var(--brand-yellow)' }}>Active</span>
@@ -179,12 +230,22 @@ export default async function ClientsPage({
                 <td style={{ padding: '8px 12px' }}>
                   {planInfo.lastDate ? new Date(planInfo.lastDate).toLocaleDateString() : '—'}
                 </td>
+                <td style={{ padding: '8px 12px' }}>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <Link href={`/admin/clients/${client.id}`} style={{ color: 'var(--brand-yellow)' }}>
+                      View
+                    </Link>
+                    <Link href={`/admin/clients/${client.id}/edit`} style={{ color: 'var(--brand-yellow)' }}>
+                      Edit
+                    </Link>
+                  </div>
+                </td>
               </tr>
             )
           })}
-          {(clients ?? []).length === 0 && (
+            {sortedClients.length === 0 && (
             <tr>
-              <td colSpan={5} style={{ padding: '16px 12px', color: '#888' }}>
+              <td colSpan={6} style={{ padding: '16px 12px', color: '#888' }}>
                 No clients found.
               </td>
             </tr>
