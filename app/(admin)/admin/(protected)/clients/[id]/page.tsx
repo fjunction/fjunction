@@ -37,12 +37,18 @@ export default async function ClientDetailPage({
     .eq('person_id', id)
     .order('start_date', { ascending: false })
 
-  const { data: dietPlans } = await admin
+    const { data: dietPlans } = await admin
     .from('diet_plans')
-    .select('id, week_number, choice_number, header, total_calories, created_at')
+    .select('id, week_number, choice_number, total_calories, created_at')
     .eq('person_id', id)
     .order('week_number', { ascending: false })
     .order('choice_number', { ascending: true })
+
+  const { data: workoutPlans } = await admin
+    .from('workout_plans')
+    .select('id, plan_name, total_days, created_at')
+    .eq('person_id', id)
+    .order('created_at', { ascending: false })
 
   const { data: notes } = await admin
     .from('client_notes')
@@ -137,7 +143,6 @@ export default async function ClientDetailPage({
             <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--brand-border)' }}>
               <th style={{ padding: '6px 12px' }}>Week</th>
               <th style={{ padding: '6px 12px' }}>Choice</th>
-              <th style={{ padding: '6px 12px' }}>Header</th>
               <th style={{ padding: '6px 12px' }}>Calories</th>
               <th style={{ padding: '6px 12px' }}>Created</th>
               <th style={{ padding: '6px 12px' }}>Action</th>
@@ -148,7 +153,6 @@ export default async function ClientDetailPage({
               <tr key={dp.id} style={{ borderBottom: '1px solid var(--brand-border)' }}>
                 <td style={{ padding: '6px 12px' }}>{dp.week_number}</td>
                 <td style={{ padding: '6px 12px' }}>{dp.choice_number}</td>
-                <td style={{ padding: '6px 12px' }}>{dp.header || '—'}</td>
                 <td style={{ padding: '6px 12px' }}>{dp.total_calories ?? '—'}</td>
                 <td style={{ padding: '6px 12px' }}>{new Date(dp.created_at).toLocaleDateString()}</td>
                 <td style={{ padding: '6px 12px', display: 'flex', gap: 10 }}>
@@ -168,6 +172,63 @@ export default async function ClientDetailPage({
               <tr>
                 <td colSpan={6} style={{ padding: '12px', color: '#888' }}>
                   No diet plans yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </section>
+
+      <section id="workout-plans" style={{ marginBottom: 32 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: '#ccc' }}>Workout Plans</h2>
+          <Link
+            href={`/admin/workout-plans/new?person_id=${person.id}`}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 8,
+              background: 'var(--brand-gradient)',
+              color: '#fff',
+              fontWeight: 600,
+              textDecoration: 'none',
+              fontSize: 13,
+            }}
+          >
+            + New Workout Plan
+          </Link>
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--brand-border)' }}>
+              <th style={{ padding: '6px 12px' }}>Plan Name</th>
+              <th style={{ padding: '6px 12px' }}>Total Days</th>
+              <th style={{ padding: '6px 12px' }}>Created</th>
+              <th style={{ padding: '6px 12px' }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(workoutPlans ?? []).map((wp) => (
+              <tr key={wp.id} style={{ borderBottom: '1px solid var(--brand-border)' }}>
+                <td style={{ padding: '6px 12px' }}>{wp.plan_name}</td>
+                <td style={{ padding: '6px 12px' }}>{wp.total_days ?? '—'}</td>
+                <td style={{ padding: '6px 12px' }}>{new Date(wp.created_at).toLocaleDateString()}</td>
+                <td style={{ padding: '6px 12px', display: 'flex', gap: 10 }}>
+                  <Link href={`/admin/workout-plans/${wp.id}`} style={{ color: 'var(--brand-yellow)' }}>
+                    View
+                  </Link>
+                  <Link
+                    href={`/admin/workout-plans/new?clone_from=${wp.id}&person_id=${person.id}`}
+                    style={{ color: 'var(--brand-yellow)' }}
+                  >
+                    Clone
+                  </Link>
+                </td>
+              </tr>
+            ))}
+            {(workoutPlans ?? []).length === 0 && (
+              <tr>
+                <td colSpan={4} style={{ padding: '12px', color: '#888' }}>
+                  No workout plans yet.
                 </td>
               </tr>
             )}
