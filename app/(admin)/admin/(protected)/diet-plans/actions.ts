@@ -200,3 +200,30 @@ export async function deleteDietPlan(dietPlanId: string, personId: string) {
   revalidatePath('/admin/diet-plans')
   redirect(`/admin/clients/${personId}`)
 }
+
+export async function quickAddFood(formData: FormData) {
+  const admin = createAdminClient()
+
+  const payload = {
+    name: formData.get('name') as string,
+    description: (formData.get('description') as string) || null,
+    is_veg: formData.get('is_veg') === 'on',
+    carbs: Number(formData.get('carbs')) || 0,
+    sugar: Number(formData.get('sugar')) || 0,
+    fiber: Number(formData.get('fiber')) || 0,
+    protein: Number(formData.get('protein')) || 0,
+    fats: Number(formData.get('fats')) || 0,
+    calories: Number(formData.get('calories')) || 0,
+    unit: (formData.get('unit') as string) || null,
+    rich_in: (formData.get('rich_in') as string) || null,
+    image: (formData.get('image') as string) || null,
+    quantity: Number(formData.get('quantity')) || 0,
+    rda: Number(formData.get('rda')) || 0,
+  }
+
+  const { data, error } = await admin.from('foods').insert(payload).select('*').single()
+
+  if (error) throw new Error(error.message)
+
+  return data
+}

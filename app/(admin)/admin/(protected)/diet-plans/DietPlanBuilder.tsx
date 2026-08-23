@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { scaleFoodMacros } from '@/lib/dietPlanMacros'
+import { QuickAddFoodModal } from './QuickAddFoodModal'
 
 type Food = {
   id: number
@@ -97,6 +98,7 @@ export function DietPlanBuilder({
   const [meals, setMeals] = useState<MealState[]>(
     initial?.meals && initial.meals.length > 0 ? initial.meals : [{ key: nextKey(), label: 'Breakfast', items: [] }]
   )
+  const [localFoods, setLocalFoods] = useState<Food[]>(foods)
 
   const payloadRef = useRef<HTMLInputElement>(null)
 
@@ -129,7 +131,7 @@ export function DietPlanBuilder({
   }
 
   function updateItemFood(mealKey: string, itemKey: string, foodId: number) {
-    const food = foods.find((f) => f.id === foodId)
+    const food = localFoods.find((f) => f.id === foodId)
     setMeals((prev) =>
       prev.map((m) =>
         m.key === mealKey
@@ -165,7 +167,7 @@ export function DietPlanBuilder({
     for (const meal of meals) {
       for (const item of meal.items) {
         if (item.food_id == null || item.quantity === '') continue
-        const food = foods.find((f) => f.id === item.food_id)
+        const food = localFoods.find((f) => f.id === item.food_id)
         if (!food) continue
         const macros = scaleFoodMacros(food, Number(item.quantity))
         calories += macros.calories ?? 0
@@ -185,7 +187,7 @@ export function DietPlanBuilder({
       sugar: Math.round(sugar),
       fiber: Math.round(fiber),
     }
-  }, [meals, foods])
+  }, [meals, localFoods])
 
   function handleSubmit() {
     if (payloadRef.current) {
@@ -312,23 +314,26 @@ export function DietPlanBuilder({
           </div>
 
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <h2 style={{ fontSize: 16, fontWeight: 600, color: '#ccc' }}>Meals</h2>
-              <button
-                type="button"
-                onClick={addMeal}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: 8,
-                  border: '1px solid var(--brand-border)',
-                  background: 'var(--brand-surface)',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: 13,
-                }}
-              >
-                + Add Meal
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <QuickAddFoodModal onCreated={(food) => setLocalFoods((prev) => [...prev, food as Food])} />
+                <button
+                  type="button"
+                  onClick={addMeal}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 8,
+                    border: '1px solid var(--brand-border)',
+                    background: 'var(--brand-surface)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: 13,
+                  }}
+                >
+                  + Add Meal
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -360,7 +365,7 @@ export function DietPlanBuilder({
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {meal.items.map((item) => {
-                      const food = foods.find((f) => f.id === item.food_id)
+                      const food = localFoods.find((f) => f.id === item.food_id)
                       const macros =
                         food && item.quantity !== '' ? scaleFoodMacros(food, Number(item.quantity)) : null
 
@@ -375,7 +380,7 @@ export function DietPlanBuilder({
                               <option value="" disabled>
                                 Select a food…
                               </option>
-                              {foods.map((f) => (
+                              {localFoods.map((f) => (
                                 <option key={f.id} value={f.id}>
                                   {f.name} {f.unit ? `(${f.unit})` : ''}
                                 </option>

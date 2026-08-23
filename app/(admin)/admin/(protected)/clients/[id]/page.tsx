@@ -1,21 +1,19 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { addClientNote } from './actions'
-
-export const metadata = {
-    title: 'Client Details',
-  }
+import { addClientNote, renewPlan } from './actions'
+import { RenewPlanModal } from './RenewPlanModal'
+import { isPlanActive } from '@/lib/planStatus'
 
 export default async function ClientDetailPage({
-    params,
-    searchParams,
-  }: {
-    params: Promise<{ id: string }>
-    searchParams: Promise<{ notice?: string }>
-  }) {
-    const { id } = await params
-    const { notice } = await searchParams
-    const admin = createAdminClient()
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ notice?: string }>
+}) {
+  const { id } = await params
+  const { notice } = await searchParams
+  const admin = createAdminClient()
 
   const { data: person, error: personError } = await admin
     .from('people')
@@ -37,7 +35,7 @@ export default async function ClientDetailPage({
     .eq('person_id', id)
     .order('start_date', { ascending: false })
 
-    const { data: dietPlans } = await admin
+  const { data: dietPlans } = await admin
     .from('diet_plans')
     .select('id, week_number, choice_number, total_calories, created_at')
     .eq('person_id', id)
@@ -56,26 +54,34 @@ export default async function ClientDetailPage({
     .eq('person_id', id)
     .order('created_at', { ascending: false })
 
+  const { data: planTypes } = await admin
+    .from('plan_types')
+    .select('id, name, price, default_duration_days')
+    .eq('is_active', true)
+    .order('name', { ascending: true })
+
   const addNoteAction = addClientNote.bind(null, person.id)
-  const latestWeek = dietPlans && dietPlans.length > 0 ? dietPlans[0].week_number : 0
+  const renewPlanAction = renewPlan.bind(null, person.id)
+
+  const hasActivePlan = (plans ?? []).some((p) => isPlanActive(p.start_date, p.duration_days))
 
   return (
     <main style={{ padding: 24, color: '#fff' }}>
-    {notice === 'duplicate_email' && (
-      <div
-        style={{
-          padding: '10px 16px',
-          borderRadius: 8,
-          background: 'var(--brand-surface)',
-          border: '1px solid var(--brand-yellow)',
-          color: 'var(--brand-yellow)',
-          marginBottom: 16,
-        }}
-      >
-        That email already belonged to this person — showing their existing record instead of creating a duplicate.
-      </div>
-    )}
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+      {notice === 'duplicate_email' && (
+        <div
+          style={{
+            padding: '10px 16px',
+            borderRadius: 8,
+            background: 'var(--brand-surface)',
+            border: '1px solid var(--brand-yellow)',
+            color: 'var(--brand-yellow)',
+            marginBottom: 16,
+          }}
+        >
+          That email already belonged to this person — showing their existing record instead of creating a duplicate.
+        </div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700 }}>{person.name}</h1>
           <p style={{ color: '#888', marginTop: 4 }}>
@@ -83,20 +89,23 @@ export default async function ClientDetailPage({
             {person.age ? `, ${person.age} yrs` : ''}
           </p>
         </div>
-        <Link
-          href={`/admin/diet-plans/new?person_id=${person.id}`}
-          style={{
-            padding: '10px 16px',
-            borderRadius: 8,
-            background: 'var(--brand-gradient)',
-            color: '#fff',
-            fontWeight: 600,
-            textDecoration: 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          + New Diet Plan
-        </Link>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {!hasActivePlan && <RenewPlanModal action={renewPlanAction} planTypes={planTypes ?? []} />}
+          <Link
+            href={`/admin/diet-plans/new?person_id=${person.id}`}
+            style={{
+              padding: '10px 16px',
+              borderRadius: 8,
+              background: 'var(--brand-gradient)',
+              color: '#fff',
+              fontWeight: 600,
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            + New Diet Plan
+          </Link>
+        </div>
       </div>
 
       <section style={{ marginBottom: 32 }}>
@@ -117,7 +126,7 @@ export default async function ClientDetailPage({
                 <td style={{ padding: '6px 12px' }}>{plan.start_date}</td>
                 <td style={{ padding: '6px 12px' }}>{plan.duration_days} days</td>
                 <td style={{ padding: '6px 12px' }}>
-                  {plan.is_active ? (
+                  {isPlanActive(plan.start_date, plan.duration_days) ? (
                     <span style={{ color: 'var(--brand-yellow)' }}>Active</span>
                   ) : (
                     <span style={{ color: '#888' }}>Inactive</span>
@@ -136,7 +145,7 @@ export default async function ClientDetailPage({
         </table>
       </section>
 
-      <section style={{ marginBottom: 32 }}>
+      <section id="diet-plans" style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#ccc' }}>Diet Plans</h2>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -170,7 +179,7 @@ export default async function ClientDetailPage({
             ))}
             {(dietPlans ?? []).length === 0 && (
               <tr>
-                <td colSpan={6} style={{ padding: '12px', color: '#888' }}>
+                <td colSpan={5} style={{ padding: '12px', color: '#888' }}>
                   No diet plans yet.
                 </td>
               </tr>
@@ -236,7 +245,7 @@ export default async function ClientDetailPage({
         </table>
       </section>
 
-      <section>
+      <section id="notes">
         <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#ccc' }}>Discussion Notes</h2>
 
         <form action={addNoteAction} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
