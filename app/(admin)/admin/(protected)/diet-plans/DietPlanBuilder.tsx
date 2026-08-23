@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
-import { scaleFoodMacros } from '@/lib/dietPlanMacros'
+import { scaleFoodMacros, scaleRecipeMacros, sumScaledMacros } from '@/lib/dietPlanMacros'
 import { QuickAddFoodModal } from './QuickAddFoodModal'
 
 type Food = {
@@ -18,6 +18,17 @@ type Food = {
   rich_in: string | null
 }
 
+type Recipe = {
+  id: number
+  name: string
+  total_calories: number | null
+  total_carbs: number | null
+  total_protein: number | null
+  total_fats: number | null
+  total_sugar: number | null
+  total_fiber: number | null
+}
+
 type WorkoutPlan = {
   id: string
   plan_name: string | null
@@ -30,7 +41,9 @@ type Person = {
 
 type MealItemState = {
   key: string
+  item_type: 'food' | 'recipe'
   food_id: number | null
+  recipe_id: number | null
   food_name_snapshot: string
   quantity: number | ''
 }
@@ -75,6 +88,7 @@ export function DietPlanBuilder({
   action,
   people,
   foods,
+  recipes,
   workoutPlans,
   lockedPersonId,
   initial,
@@ -82,6 +96,7 @@ export function DietPlanBuilder({
   action: (formData: FormData) => void
   people: Person[]
   foods: Food[]
+  recipes: Recipe[]
   workoutPlans: WorkoutPlan[]
   lockedPersonId?: string
   initial?: InitialData
@@ -118,7 +133,13 @@ export function DietPlanBuilder({
     setMeals((prev) =>
       prev.map((m) =>
         m.key === mealKey
-          ? { ...m, items: [...m.items, { key: nextKey(), food_id: null, food_name_snapshot: '', quantity: '' }] }
+          ? {
+              ...m,
+              items: [
+                ...m.items,
+                { key: nextKey(), item_type: 'food', food_id: null, recipe_id: null, food_name_snapshot: '', quantity: '' },
+              ],
+            }
           : m
       )
     )
@@ -127,6 +148,23 @@ export function DietPlanBuilder({
   function removeItem(mealKey: string, itemKey: string) {
     setMeals((prev) =>
       prev.map((m) => (m.key === mealKey ? { ...m, items: m.items.filter((it) => it.key !== itemKey) } : m))
+    )
+  }
+
+  function updateItemType(mealKey: string, itemKey: string, itemType: 'food' | 'recipe') {
+    setMeals((prev) =>
+      prev.map((m) =>
+        m.key === mealKey
+          ? {
+              ...m,
+              items: m.items.map((it) =>
+                it.key === itemKey
+                  ? { ...it, item_type: itemType, food_id: null, recipe_id: null, food_name_snapshot: '', quantity: '' }
+                  : it
+              ),
+            }
+          : m
+      )
     )
   }
 
@@ -146,6 +184,22 @@ export function DietPlanBuilder({
     )
   }
 
+  function updateItemRecipe(mealKey: string, itemKey: string, recipeId: number) {
+    const recipe = recipes.find((r) => r.id === recipeId)
+    setMeals((prev) =>
+      prev.map((m) =>
+        m.key === mealKey
+          ? {
+              ...m,
+              items: m.items.map((it) =>
+                it.key === itemKey ? { ...it, recipe_id: recipeId, food_name_snapshot: recipe?.name ?? '' } : it
+              ),
+            }
+          : m
+      )
+    )
+  }
+
   function updateItemQuantity(mealKey: string, itemKey: string, quantity: number | '') {
     setMeals((prev) =>
       prev.map((m) =>
@@ -157,37 +211,19 @@ export function DietPlanBuilder({
   }
 
   const totals = useMemo(() => {
-    let calories = 0
-    let carbs = 0
-    let protein = 0
-    let fats = 0
-    let sugar = 0
-    let fiber = 0
-
-    for (const meal of meals) {
-      for (const item of meal.items) {
-        if (item.food_id == null || item.quantity === '') continue
-        const food = localFoods.find((f) => f.id === item.food_id)
-        if (!food) continue
-        const macros = scaleFoodMacros(food, Number(item.quantity))
-        calories += macros.calories ?? 0
-        carbs += macros.carbs ?? 0
-        protein += macros.protein ?? 0
-        fats += macros.fats ?? 0
-        sugar += macros.sugar ?? 0
-        fiber += macros.fiber ?? 0
-      }
-    }
-
-    return {
-      calories: Math.round(calories),
-      carbs: Math.round(carbs),
-      protein: Math.round(protein),
-      fats: Math.round(fats),
-      sugar: Math.round(sugar),
-      fiber: Math.round(fiber),
-    }
-  }, [meals, localFoods])
+    const scaledItems = meals.flatMap((m) =>
+      m.items.map((it) => {
+        if (it.quantity === '') return { calories: null, carbs: null, protein: null, fats: null, sugar: null, fiber: null }
+        if (it.item_type === 'recipe') {
+          const recipe = recipes.find((r) => r.id === it.recipe_id)
+          return scaleRecipeMacros(recipe ?? null, Number(it.quantity))
+        }
+        const food = localFoods.find((f) => f.id === it.food_id)
+        return scaleFoodMacros(food ?? null, Number(it.quantity))
+      })
+    )
+    return sumScaledMacros(scaledItems)
+  }, [meals, localFoods, recipes])
 
   function handleSubmit() {
     if (payloadRef.current) {
@@ -204,7 +240,9 @@ export function DietPlanBuilder({
         meals: meals.map((m) => ({
           label: m.label,
           items: m.items.map((it) => ({
+            item_type: it.item_type,
             food_id: it.food_id,
+            recipe_id: it.recipe_id,
             food_name_snapshot: it.food_name_snapshot,
             quantity: it.quantity === '' ? null : Number(it.quantity),
           })),
@@ -314,7 +352,7 @@ export function DietPlanBuilder({
           </div>
 
           <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <h2 style={{ fontSize: 16, fontWeight: 600, color: '#ccc' }}>Meals</h2>
               <div style={{ display: 'flex', gap: 8 }}>
                 <QuickAddFoodModal onCreated={(food) => setLocalFoods((prev) => [...prev, food as Food])} />
@@ -365,31 +403,63 @@ export function DietPlanBuilder({
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {meal.items.map((item) => {
-                      const food = localFoods.find((f) => f.id === item.food_id)
+                      const food = item.item_type === 'food' ? localFoods.find((f) => f.id === item.food_id) : null
+                      const recipe = item.item_type === 'recipe' ? recipes.find((r) => r.id === item.recipe_id) : null
                       const macros =
-                        food && item.quantity !== '' ? scaleFoodMacros(food, Number(item.quantity)) : null
+                        item.quantity !== ''
+                          ? item.item_type === 'recipe'
+                            ? scaleRecipeMacros(recipe ?? null, Number(item.quantity))
+                            : scaleFoodMacros(food ?? null, Number(item.quantity))
+                          : null
 
                       return (
                         <div key={item.key}>
                           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                             <select
-                              value={item.food_id ?? ''}
-                              onChange={(e) => updateItemFood(meal.key, item.key, Number(e.target.value))}
-                              style={{ ...inputStyle, flex: 2 }}
+                              value={item.item_type}
+                              onChange={(e) => updateItemType(meal.key, item.key, e.target.value as 'food' | 'recipe')}
+                              style={{ ...inputStyle, flex: '0 0 100px' }}
                             >
-                              <option value="" disabled>
-                                Select a food…
-                              </option>
-                              {localFoods.map((f) => (
-                                <option key={f.id} value={f.id}>
-                                  {f.name} {f.unit ? `(${f.unit})` : ''}
-                                </option>
-                              ))}
+                              <option value="food">Food</option>
+                              <option value="recipe">Recipe</option>
                             </select>
+
+                            {item.item_type === 'food' ? (
+                              <select
+                                value={item.food_id ?? ''}
+                                onChange={(e) => updateItemFood(meal.key, item.key, Number(e.target.value))}
+                                style={{ ...inputStyle, flex: 2 }}
+                              >
+                                <option value="" disabled>
+                                  Select a food…
+                                </option>
+                                {localFoods.map((f) => (
+                                  <option key={f.id} value={f.id}>
+                                    {f.name} {f.unit ? `(${f.unit})` : ''}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <select
+                                value={item.recipe_id ?? ''}
+                                onChange={(e) => updateItemRecipe(meal.key, item.key, Number(e.target.value))}
+                                style={{ ...inputStyle, flex: 2 }}
+                              >
+                                <option value="" disabled>
+                                  Select a recipe…
+                                </option>
+                                {recipes.map((r) => (
+                                  <option key={r.id} value={r.id}>
+                                    {r.name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+
                             <input
                               type="number"
                               step="0.1"
-                              placeholder="Qty"
+                              placeholder={item.item_type === 'recipe' ? 'Portion (1 = full)' : 'Qty'}
                               value={item.quantity}
                               onChange={(e) =>
                                 updateItemQuantity(meal.key, item.key, e.target.value ? Number(e.target.value) : '')
@@ -429,7 +499,7 @@ export function DietPlanBuilder({
                       fontSize: 13,
                     }}
                   >
-                    + Add Food Item
+                    + Add Item
                   </button>
                 </div>
               ))}

@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { scaleFoodMacros, sumMacros } from '@/lib/dietPlanMacros'
+import { scaleFoodMacros, scaleRecipeMacros, sumScaledMacros } from '@/lib/dietPlanMacros'
 import { DietPlanDocument } from './DietPlanDocument'
 
 export const runtime = 'nodejs'
@@ -28,24 +28,32 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     .order('meal_order', { ascending: true })
 
   const meals = []
-  const allItemsForTotals: { food: any; quantity: number | null }[] = []
+  const scaledForTotals: any[] = []
+  const recipeIdsUsed = new Set<number>()
 
   for (const meal of mealsRaw ?? []) {
     const { data: items } = await admin
       .from('diet_plan_meal_items')
       .select(
-        'food_name_snapshot, quantity, sort_order, foods(quantity, unit, carbs, protein, fats, sugar, fiber, calories, rich_in)'
+        'food_name_snapshot, quantity, sort_order, food_id, recipe_id, foods(quantity, unit, carbs, protein, fats, sugar, fiber, calories, rich_in), recipes(total_calories, total_carbs, total_protein, total_fats, total_sugar, total_fiber)'
       )
       .eq('diet_plan_meal_id', meal.id)
       .order('sort_order', { ascending: true })
 
-    const itemsWithMacros = (items ?? []).map((item: any) => {
-      allItemsForTotals.push({ food: item.foods, quantity: item.quantity })
-      const macros = scaleFoodMacros(item.foods, item.quantity)
+    const itemsDisplay = (items ?? []).map((item: any) => {
+      const isRecipe = item.recipe_id != null
+      if (isRecipe) recipeIdsUsed.add(item.recipe_id)
+
+      const macros = isRecipe
+        ? scaleRecipeMacros(item.recipes, item.quantity)
+        : scaleFoodMacros(item.foods, item.quantity)
+
+      scaledForTotals.push(macros)
+
       return {
         food_name_snapshot: item.food_name_snapshot,
         quantity: item.quantity,
-        unit: macros.unit,
+        unit: isRecipe ? 'portion' : macros.unit,
         carbs: macros.carbs,
         protein: macros.protein,
         fats: macros.fats,
@@ -54,10 +62,40 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       }
     })
 
-    meals.push({ label: meal.label, items: itemsWithMacros })
+    meals.push({ label: meal.label, items: itemsDisplay })
   }
 
-  const totals = sumMacros(allItemsForTotals)
+  const totals = sumScaledMacros(scaledForTotals)
+
+  const recipeDetails = []
+  for (const recipeId of recipeIdsUsed) {
+    const { data: recipe } = await admin
+      .from('recipes')
+      .select('id, name, total_calories')
+      .eq('id', recipeId)
+      .single()
+
+    if (!recipe) continue
+
+    const { data: ingredients } = await admin
+      .from('recipe_ingredients')
+      .select('ingredient, sort_order')
+      .eq('recipe_id', recipeId)
+      .order('sort_order', { ascending: true })
+
+    const { data: steps } = await admin
+      .from('recipe_steps')
+      .select('instruction, sort_order')
+      .eq('recipe_id', recipeId)
+      .order('sort_order', { ascending: true })
+
+    recipeDetails.push({
+      name: recipe.name,
+      total_calories: recipe.total_calories,
+      ingredients: (ingredients ?? []).map((i) => i.ingredient ?? ''),
+      steps: (steps ?? []).map((s) => s.instruction ?? ''),
+    })
+  }
 
   let logoBuffer: Buffer | null = null
   try {
@@ -67,7 +105,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
   const buffer = await renderToBuffer(
-    DietPlanDocument({ dietPlan: dietPlan as any, meals, totals, logoBuffer })
+    DietPlanDocument({ dietPlan: dietPlan as any, meals, totals, recipes: recipeDetails, logoBuffer })
   )
 
   const person = (dietPlan as any).people

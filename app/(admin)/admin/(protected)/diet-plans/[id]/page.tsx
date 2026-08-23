@@ -1,9 +1,14 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { deleteDietPlan } from '../actions'
-import { scaleFoodMacros, sumMacros } from '@/lib/dietPlanMacros'
+import { scaleFoodMacros, scaleRecipeMacros, sumScaledMacros } from '@/lib/dietPlanMacros'
 
 const VEG_LABELS: Record<number, string> = { 0: 'Veg', 1: 'Non-Veg', 2: 'Eggetarian' }
+
+function recipeImageUrl(path: string | null) {
+  if (!path) return null
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${path}`
+}
 
 export default async function DietPlanViewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -32,36 +37,70 @@ export default async function DietPlanViewPage({ params }: { params: Promise<{ i
     .order('meal_order', { ascending: true })
 
   const mealsWithItems = []
-  const allItemsForTotals: { food: any; quantity: number | null }[] = []
+  const scaledForTotals: { calories: number | null; carbs: number | null; protein: number | null; fats: number | null; sugar: number | null; fiber: number | null }[] = []
+  const recipeIdsUsed = new Set<number>()
 
   for (const meal of mealsRaw ?? []) {
     const { data: items } = await admin
       .from('diet_plan_meal_items')
       .select(
-        'food_name_snapshot, quantity, sort_order, foods(quantity, unit, carbs, protein, fats, sugar, fiber, calories, rich_in)'
+        'food_name_snapshot, quantity, sort_order, food_id, recipe_id, foods(quantity, unit, carbs, protein, fats, sugar, fiber, calories, rich_in), recipes(total_calories, total_carbs, total_protein, total_fats, total_sugar, total_fiber)'
       )
       .eq('diet_plan_meal_id', meal.id)
       .order('sort_order', { ascending: true })
 
-    const itemsWithMacros = (items ?? []).map((item: any) => {
-      allItemsForTotals.push({ food: item.foods, quantity: item.quantity })
-      const macros = scaleFoodMacros(item.foods, item.quantity)
+    const itemsDisplay = (items ?? []).map((item: any) => {
+      const isRecipe = item.recipe_id != null
+      if (isRecipe) recipeIdsUsed.add(item.recipe_id)
+
+      const macros = isRecipe
+        ? scaleRecipeMacros(item.recipes, item.quantity)
+        : scaleFoodMacros(item.foods, item.quantity)
+
+      scaledForTotals.push(macros)
+
       return {
         food_name_snapshot: item.food_name_snapshot,
         quantity: item.quantity,
-        unit: macros.unit,
+        unit: isRecipe ? 'portion' : macros.unit,
         carbs: macros.carbs,
         protein: macros.protein,
         fats: macros.fats,
         calories: macros.calories,
         rich_in: macros.rich_in,
+        is_recipe: isRecipe,
       }
     })
 
-    mealsWithItems.push({ id: meal.id, label: meal.label, items: itemsWithMacros })
+    mealsWithItems.push({ id: meal.id, label: meal.label, items: itemsDisplay })
   }
 
-  const totals = sumMacros(allItemsForTotals)
+  const totals = sumScaledMacros(scaledForTotals)
+
+  const recipeDetails = []
+  for (const recipeId of recipeIdsUsed) {
+    const { data: recipe } = await admin
+      .from('recipes')
+      .select('id, name, image, total_calories, total_carbs, total_protein, total_fats, total_sugar, total_fiber')
+      .eq('id', recipeId)
+      .single()
+
+    if (!recipe) continue
+
+    const { data: ingredients } = await admin
+      .from('recipe_ingredients')
+      .select('ingredient, sort_order')
+      .eq('recipe_id', recipeId)
+      .order('sort_order', { ascending: true })
+
+    const { data: steps } = await admin
+      .from('recipe_steps')
+      .select('instruction, image, sort_order')
+      .eq('recipe_id', recipeId)
+      .order('sort_order', { ascending: true })
+
+    recipeDetails.push({ recipe, ingredients: ingredients ?? [], steps: steps ?? [] })
+  }
 
   const person = (dietPlan as any).people
   const deleteAction = deleteDietPlan.bind(null, dietPlan.id, dietPlan.person_id)
@@ -170,7 +209,7 @@ export default async function DietPlanViewPage({ params }: { params: Promise<{ i
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--brand-border)' }}>
-                    <th style={{ padding: '4px 8px' }}>Food Name</th>
+                    <th style={{ padding: '4px 8px' }}>Item</th>
                     <th style={{ padding: '4px 8px' }}>Quantity</th>
                     <th style={{ padding: '4px 8px' }}>C</th>
                     <th style={{ padding: '4px 8px' }}>P</th>
@@ -182,7 +221,12 @@ export default async function DietPlanViewPage({ params }: { params: Promise<{ i
                 <tbody>
                   {meal.items.map((item, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--brand-border)' }}>
-                      <td style={{ padding: '4px 8px' }}>{item.food_name_snapshot}</td>
+                      <td style={{ padding: '4px 8px' }}>
+                        {item.food_name_snapshot}
+                        {item.is_recipe && (
+                          <span style={{ color: 'var(--brand-yellow)', fontSize: 11 }}> (Recipe)</span>
+                        )}
+                      </td>
                       <td style={{ padding: '4px 8px' }}>
                         {item.quantity} {item.unit ?? ''}
                       </td>
@@ -207,6 +251,7 @@ export default async function DietPlanViewPage({ params }: { params: Promise<{ i
           background: 'var(--brand-surface)',
           border: '1px solid var(--brand-yellow)',
           maxWidth: 360,
+          marginBottom: recipeDetails.length > 0 ? 24 : 0,
         }}
       >
         <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Plan Summary</h3>
@@ -234,6 +279,72 @@ export default async function DietPlanViewPage({ params }: { params: Promise<{ i
           </div>
         ))}
       </div>
+
+      {recipeDetails.length > 0 && (
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>Recipes in This Plan</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {recipeDetails.map(({ recipe, ingredients, steps }) => {
+              const imageUrl = recipeImageUrl(recipe.image)
+              return (
+                <div
+                  key={recipe.id}
+                  style={{
+                    padding: 16,
+                    borderRadius: 12,
+                    background: 'var(--brand-surface)',
+                    border: '1px solid var(--brand-border)',
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+                    {imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={imageUrl}
+                        alt={recipe.name}
+                        width={48}
+                        height={48}
+                        style={{ borderRadius: 8, objectFit: 'cover' }}
+                      />
+                    )}
+                    <div>
+                      <h3 style={{ fontSize: 15, fontWeight: 700 }}>{recipe.name}</h3>
+                      <p style={{ fontSize: 12, color: '#888' }}>
+                        {recipe.total_calories ? `${recipe.total_calories} kcal (full recipe)` : ''}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1 1 200px' }}>
+                      <h4 style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#ccc' }}>Ingredients</h4>
+                      <ul style={{ paddingLeft: 18, fontSize: 13 }}>
+                        {ingredients.map((ing, idx) => (
+                          <li key={idx} style={{ marginBottom: 3 }}>
+                            {ing.ingredient}
+                          </li>
+                        ))}
+                        {ingredients.length === 0 && <li style={{ color: '#888' }}>None listed</li>}
+                      </ul>
+                    </div>
+                    <div style={{ flex: '2 1 300px' }}>
+                      <h4 style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: '#ccc' }}>Steps</h4>
+                      <ol style={{ paddingLeft: 18, fontSize: 13 }}>
+                        {steps.map((step, idx) => (
+                          <li key={idx} style={{ marginBottom: 6 }}>
+                            {step.instruction}
+                          </li>
+                        ))}
+                        {steps.length === 0 && <li style={{ color: '#888' }}>None listed</li>}
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </main>
   )
 }

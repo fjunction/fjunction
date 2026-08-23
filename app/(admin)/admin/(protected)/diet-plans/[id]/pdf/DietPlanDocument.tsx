@@ -53,6 +53,16 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: '#999',
   },
+  recipeBox: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 10,
+  },
+  recipeName: { fontSize: 12, fontWeight: 700, marginBottom: 6, color: '#111' },
+  recipeSubheading: { fontSize: 10, fontWeight: 700, color: '#92400e', marginBottom: 3 },
+  recipeLine: { fontSize: 9, color: '#333', marginBottom: 2, lineHeight: 1.3 },
 })
 
 const VEG_LABELS: Record<number, string> = { 0: 'Veg', 1: 'Non-Veg', 2: 'Eggetarian' }
@@ -86,15 +96,19 @@ type DietPlan = {
   people?: { name: string } | null
 }
 
+type RecipeDetail = { name: string | null; total_calories: number | null; ingredients: string[]; steps: string[] }
+
 export function DietPlanDocument({
   dietPlan,
   meals,
   totals,
+  recipes,
   logoBuffer,
 }: {
   dietPlan: DietPlan
   meals: Meal[]
   totals: Totals
+  recipes: RecipeDetail[]
   logoBuffer: Buffer | null
 }) {
   return (
@@ -185,12 +199,40 @@ export function DietPlanDocument({
           </View>
         </View>
 
-        <Text
-          style={styles.footer}
-          render={({ pageNumber, totalPages }) => `FJunction · Page ${pageNumber} of ${totalPages}`}
-          fixed
-        />
-      </Page>
+    {recipes.length > 0 && (
+      <View style={{ marginTop: 18 }}>
+        <Text style={[styles.sectionTitle, { textAlign: 'center', marginBottom: 10 }]}>Recipes in This Plan</Text>
+        {recipes.map((recipe, idx) => (
+          <View key={idx} style={styles.recipeBox} wrap={false}>
+            <Text style={styles.recipeName}>
+              {recipe.name}
+              {recipe.total_calories ? ` (${recipe.total_calories} kcal, full recipe)` : ''}
+            </Text>
+
+            <Text style={styles.recipeSubheading}>Ingredients</Text>
+            {recipe.ingredients.map((ing, i) => (
+              <Text key={i} style={styles.recipeLine}>
+                • {ing}
+              </Text>
+            ))}
+
+            <Text style={[styles.recipeSubheading, { marginTop: 6 }]}>Steps</Text>
+            {recipe.steps.map((step, i) => (
+              <Text key={i} style={styles.recipeLine}>
+                {i + 1}. {step}
+              </Text>
+            ))}
+          </View>
+        ))}
+      </View>
+    )}
+
+    <Text
+      style={styles.footer}
+      render={({ pageNumber, totalPages }) => `FJunction · Page ${pageNumber} of ${totalPages}`}
+      fixed
+    />
+    </Page>
     </Document>
-  )
+    )
 }

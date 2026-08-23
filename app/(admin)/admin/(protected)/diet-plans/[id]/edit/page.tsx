@@ -36,7 +36,7 @@ export default async function EditDietPlanPage({ params }: { params: Promise<{ i
   for (const meal of mealsRaw ?? []) {
     const { data: items } = await admin
       .from('diet_plan_meal_items')
-      .select('food_id, food_name_snapshot, quantity, sort_order')
+      .select('food_id, recipe_id, food_name_snapshot, quantity, sort_order')
       .eq('diet_plan_meal_id', meal.id)
       .order('sort_order', { ascending: true })
 
@@ -45,7 +45,9 @@ export default async function EditDietPlanPage({ params }: { params: Promise<{ i
       label: meal.label ?? '',
       items: (items ?? []).map((it, idx) => ({
         key: `item-${meal.id}-${idx}`,
+        item_type: (it.recipe_id != null ? 'recipe' : 'food') as 'recipe' | 'food',
         food_id: it.food_id,
+        recipe_id: it.recipe_id,
         food_name_snapshot: it.food_name_snapshot ?? '',
         quantity: it.quantity ?? '',
       })),
@@ -53,9 +55,14 @@ export default async function EditDietPlanPage({ params }: { params: Promise<{ i
   }
 
   const { data: foods } = await admin
-  .from('foods')
-  .select('id, name, calories, protein, carbs, fats, sugar, fiber, quantity, unit, rich_in')
-  .order('name', { ascending: true })
+    .from('foods')
+    .select('id, name, calories, protein, carbs, fats, sugar, fiber, quantity, unit, rich_in')
+    .order('name', { ascending: true })
+
+  const { data: recipes } = await admin
+    .from('recipes')
+    .select('id, name, total_calories, total_carbs, total_protein, total_fats, total_sugar, total_fiber')
+    .order('name', { ascending: true })
 
   const { data: workoutPlans } = await admin
     .from('workout_plans')
@@ -72,6 +79,7 @@ export default async function EditDietPlanPage({ params }: { params: Promise<{ i
         action={updateAction}
         people={[]}
         foods={foods ?? []}
+        recipes={recipes ?? []}
         workoutPlans={workoutPlans ?? []}
         lockedPersonId={dietPlan.person_id}
         initial={{

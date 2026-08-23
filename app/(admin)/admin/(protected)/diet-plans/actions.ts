@@ -4,10 +4,12 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { sumMacros } from '@/lib/dietPlanMacros'
+import { scaleFoodMacros, scaleRecipeMacros, sumScaledMacros } from '@/lib/dietPlanMacros'
 
 type MealItemPayload = {
+  item_type: 'food' | 'recipe'
   food_id: number | null
+  recipe_id: number | null
   food_name_snapshot: string
   quantity: number | null
 }
@@ -49,7 +51,8 @@ async function insertMeals(admin: ReturnType<typeof createAdminClient>, dietPlan
     if (meal.items.length > 0) {
       const itemsToInsert = meal.items.map((item, itemIndex) => ({
         diet_plan_meal_id: mealRow.id,
-        food_id: item.food_id,
+        food_id: item.item_type === 'food' ? item.food_id : null,
+        recipe_id: item.item_type === 'recipe' ? item.recipe_id : null,
         food_name_snapshot: item.food_name_snapshot,
         quantity: item.quantity,
         sort_order: itemIndex + 1,
@@ -64,7 +67,18 @@ async function insertMeals(admin: ReturnType<typeof createAdminClient>, dietPlan
 
 async function computeTotals(admin: ReturnType<typeof createAdminClient>, meals: MealPayload[]) {
   const foodIds = Array.from(
-    new Set(meals.flatMap((m) => m.items.map((it) => it.food_id).filter((id): id is number => id != null)))
+    new Set(
+      meals.flatMap((m) =>
+        m.items.filter((it) => it.item_type === 'food').map((it) => it.food_id).filter((id): id is number => id != null)
+      )
+    )
+  )
+  const recipeIds = Array.from(
+    new Set(
+      meals.flatMap((m) =>
+        m.items.filter((it) => it.item_type === 'recipe').map((it) => it.recipe_id).filter((id): id is number => id != null)
+      )
+    )
   )
 
   const foodsById: Record<number, any> = {}
@@ -73,20 +87,30 @@ async function computeTotals(admin: ReturnType<typeof createAdminClient>, meals:
       .from('foods')
       .select('id, quantity, unit, carbs, protein, fats, sugar, fiber, calories, rich_in')
       .in('id', foodIds)
-
-    for (const food of foods ?? []) {
-      foodsById[food.id] = food
-    }
+    for (const food of foods ?? []) foodsById[food.id] = food
   }
 
-  const items = meals.flatMap((m) =>
-    m.items.map((it) => ({
-      food: it.food_id != null ? foodsById[it.food_id] ?? null : null,
-      quantity: it.quantity,
-    }))
+  const recipesById: Record<number, any> = {}
+  if (recipeIds.length > 0) {
+    const { data: recipes } = await admin
+      .from('recipes')
+      .select('id, total_calories, total_carbs, total_protein, total_fats, total_sugar, total_fiber')
+      .in('id', recipeIds)
+    for (const recipe of recipes ?? []) recipesById[recipe.id] = recipe
+  }
+
+  const scaledItems = meals.flatMap((m) =>
+    m.items.map((it) => {
+      if (it.item_type === 'recipe') {
+        const recipe = it.recipe_id != null ? recipesById[it.recipe_id] ?? null : null
+        return scaleRecipeMacros(recipe, it.quantity)
+      }
+      const food = it.food_id != null ? foodsById[it.food_id] ?? null : null
+      return scaleFoodMacros(food, it.quantity)
+    })
   )
 
-  return sumMacros(items)
+  return sumScaledMacros(scaledItems)
 }
 
 export async function createDietPlan(formData: FormData) {

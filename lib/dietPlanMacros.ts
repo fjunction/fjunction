@@ -69,3 +69,65 @@ export function sumMacros(
     fiber: Math.round(fiber),
   }
 }
+
+export type RecipeMacroSource = {
+  total_calories: number | null
+  total_carbs: number | null
+  total_protein: number | null
+  total_fats: number | null
+  total_sugar: number | null
+  total_fiber: number | null
+} | null
+
+export function scaleRecipeMacros(recipe: RecipeMacroSource, multiplier: number | null) {
+  if (!recipe || multiplier == null) {
+    return { calories: null, carbs: null, protein: null, fats: null, sugar: null, fiber: null, unit: null, rich_in: null }
+  }
+  const round = (v: number | null) => (v == null ? null : Math.round(v * multiplier * 10) / 10)
+  return {
+    calories: round(recipe.total_calories),
+    carbs: round(recipe.total_carbs),
+    protein: round(recipe.total_protein),
+    fats: round(recipe.total_fats),
+    sugar: round(recipe.total_sugar),
+    fiber: round(recipe.total_fiber),
+    unit: null,
+    rich_in: null,
+  }
+}
+
+export function sumScaledMacros(
+  list: {
+    calories: number | null
+    carbs: number | null
+    protein: number | null
+    fats: number | null
+    sugar: number | null
+    fiber: number | null
+  }[]
+) {
+  let calories = 0
+  let carbs = 0
+  let protein = 0
+  let fats = 0
+  let sugar = 0
+  let fiber = 0
+
+  for (const m of list) {
+    calories += m.calories ?? 0
+    carbs += m.carbs ?? 0
+    protein += m.protein ?? 0
+    fats += m.fats ?? 0
+    sugar += m.sugar ?? 0
+    fiber += m.fiber ?? 0
+  }
+
+  return {
+    calories: Math.round(calories),
+    carbs: Math.round(carbs),
+    protein: Math.round(protein),
+    fats: Math.round(fats),
+    sugar: Math.round(sugar),
+    fiber: Math.round(fiber),
+  }
+}

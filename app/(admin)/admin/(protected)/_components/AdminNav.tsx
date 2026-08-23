@@ -24,11 +24,17 @@ export function AdminNav() {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 56, overflowX: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 24 }}>
+        <Link
+          href="/admin"
+          style={{ display: 'flex', alignItems: 'center', gap: 10, marginRight: 24, textDecoration: 'none' }}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Fitness Junction" width={28} height={28} style={{ borderRadius: '50%' }} />
-          <span style={{ fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>Fitness Junction</span>
-        </div>
+          <img src="/logo.png" alt="FJunction" width={28} height={28} style={{ borderRadius: '50%' }} />
+          <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+            <span style={{ color: 'var(--brand-orange)' }}>F</span>
+            <span style={{ color: '#fff' }}>Junction</span>
+          </span>
+        </Link>
 
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + '/')
