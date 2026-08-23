@@ -110,14 +110,6 @@ export function DietPlanDocument({
         </Text>
         <View style={styles.underline} />
 
-        {(dietPlan.veg_type != null || dietPlan.total_calories) && (
-          <Text style={{ marginBottom: 12, color: '#555' }}>
-            {dietPlan.veg_type != null ? VEG_LABELS[dietPlan.veg_type] ?? '' : ''}
-            {dietPlan.veg_type != null && dietPlan.total_calories ? ' · ' : ''}
-            {dietPlan.total_calories ? `${dietPlan.total_calories} kcal` : ''}
-          </Text>
-        )}
-
         {dietPlan.diet_notes && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Diet Notes</Text>
