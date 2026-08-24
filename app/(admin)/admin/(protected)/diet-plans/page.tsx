@@ -38,7 +38,7 @@ export default async function DietPlansPage({
       'id, week_number, choice_number, total_calories, total_carbs, total_fats, total_protein, created_at, people!inner(name)',
       { count: 'exact' }
     )
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: false, nullsFirst: false })
     .range(from, to)
 
   if (sp.q) {
