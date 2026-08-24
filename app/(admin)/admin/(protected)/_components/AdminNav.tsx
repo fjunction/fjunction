@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: '/admin/workout-plans', label: 'Workout Plan Management' },
   { href: '/admin/recipes', label: 'Recipe Management' },
   { href: '/admin/master-data', label: 'Master Data' },
+  { href: '/admin/content', label: 'Content Management' },
 ]
 
 export function AdminNav() {

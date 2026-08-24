@@ -19,7 +19,7 @@ export function Hero({
   secondaryCtaHref?: string | null
 }) {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-20">
+    <section className="mx-auto max-w-7xl bg-white px-6 py-20">
       <div className="max-w-3xl">
         <span className="inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-orange-600">
           <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />

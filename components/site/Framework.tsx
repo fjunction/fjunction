@@ -21,7 +21,7 @@ export function Framework({
   steps: FrameworkStep[]
 }) {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-20">
+    <section className="mx-auto max-w-7xl bg-white px-6 py-20">
       <span className="text-xs font-semibold uppercase tracking-wide text-orange-600">
         {eyebrowText}
       </span>
