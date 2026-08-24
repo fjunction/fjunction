@@ -51,55 +51,97 @@ export async function updateHeader(formData: FormData) {
 export async function updateHero(formData: FormData) {
   const supabase = await createClient()
   const { data: existing } = await supabase.from('home_hero').select('id').single()
+  const photoFile = formData.get('photo_file') as File | null
+  const photoUrl = await uploadImageIfProvided(supabase, photoFile, 'hero-photo')
 
-  await supabase
-    .from('home_hero')
-    .update({
-      eyebrow_text: formData.get('eyebrow_text'),
-      heading: formData.get('heading'),
-      subheading: formData.get('subheading'),
-      primary_cta_text: formData.get('primary_cta_text'),
-      primary_cta_href: formData.get('primary_cta_href'),
-      secondary_cta_text: formData.get('secondary_cta_text'),
-      secondary_cta_href: formData.get('secondary_cta_href'),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', existing!.id)
+  await supabase.from('home_hero').update({
+    tag_line: formData.get('tag_line'),
+    heading: formData.get('heading'),
+    subheading: formData.get('subheading'),
+    disclaimer_text: formData.get('disclaimer_text'),
+    ...(photoUrl ? { photo_url: photoUrl } : {}),
+    consultation_note_text: formData.get('consultation_note_text'),
+    primary_cta_text: formData.get('primary_cta_text'),
+    primary_cta_href: formData.get('primary_cta_href'),
+    secondary_cta_text: formData.get('secondary_cta_text'),
+    secondary_cta_href: formData.get('secondary_cta_href'),
+    updated_at: new Date().toISOString(),
+  }).eq('id', existing!.id)
 
   revalidatePath('/')
   revalidatePath('/admin/content/hero')
 }
 
-// ---------- Signals ----------
 export async function updateSignals(formData: FormData) {
   const supabase = await createClient()
   const { data: existingSection } = await supabase.from('home_signals_section').select('id').single()
 
-  await supabase
-    .from('home_signals_section')
-    .update({
-      heading: formData.get('heading'),
-      subheading: formData.get('subheading'),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', existingSection!.id)
+  await supabase.from('home_signals_section').update({
+    heading: formData.get('heading'),
+    heading_secondary: formData.get('heading_secondary'),
+    subheading: formData.get('subheading'),
+    updated_at: new Date().toISOString(),
+  }).eq('id', existingSection!.id)
 
-  const cards = JSON.parse(formData.get('cards') as string) as Array<{
-    icon_key: string
-    title: string
-    description: string
-  }>
-
+  const cards = JSON.parse(formData.get('cards') as string)
   await supabase.from('home_signal_cards').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-
-  if (cards.length > 0) {
-    await supabase.from('home_signal_cards').insert(
-      cards.map((card, index) => ({ ...card, sort_order: index + 1 }))
-    )
-  }
+  if (cards.length > 0) await supabase.from('home_signal_cards').insert(cards.map((c: any, i: number) => ({ ...c, sort_order: i + 1 })))
 
   revalidatePath('/')
   revalidatePath('/admin/content/signals')
+}
+
+export async function updateIsolationCallout(formData: FormData) {
+  const supabase = await createClient()
+  const { data: existing } = await supabase.from('home_isolation_callout').select('id').single()
+  await supabase.from('home_isolation_callout').update({
+    heading: formData.get('heading'),
+    body_text: formData.get('body_text'),
+    updated_at: new Date().toISOString(),
+  }).eq('id', existing!.id)
+  revalidatePath('/')
+  revalidatePath('/admin/content/isolation-callout')
+}
+
+export async function updateSystemSection(formData: FormData) {
+  const supabase = await createClient()
+  const { data: existing } = await supabase.from('home_system_section').select('id').single()
+
+  await supabase.from('home_system_section').update({
+    heading: formData.get('heading'),
+    heading_secondary: formData.get('heading_secondary'),
+    subheading: formData.get('subheading'),
+    updated_at: new Date().toISOString(),
+  }).eq('id', existing!.id)
+
+  const tags = JSON.parse(formData.get('tags') as string)
+  await supabase.from('home_system_tags').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+  if (tags.length > 0) await supabase.from('home_system_tags').insert(tags.map((t: any, i: number) => ({ ...t, sort_order: i + 1 })))
+
+  const nodes = JSON.parse(formData.get('nodes') as string)
+  await supabase.from('home_system_nodes').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+  if (nodes.length > 0) await supabase.from('home_system_nodes').insert(nodes.map((n: any, i: number) => ({ ...n, sort_order: i })))
+
+  revalidatePath('/')
+  revalidatePath('/admin/content/system-section')
+}
+
+export async function updateClosingCta(formData: FormData) {
+  const supabase = await createClient()
+  const { data: existing } = await supabase.from('home_closing_cta').select('id').single()
+  await supabase.from('home_closing_cta').update({
+    heading: formData.get('heading'),
+    subheading: formData.get('subheading'),
+    primary_cta_text: formData.get('primary_cta_text'),
+    primary_cta_href: formData.get('primary_cta_href'),
+    secondary_cta_text: formData.get('secondary_cta_text'),
+    secondary_cta_href: formData.get('secondary_cta_href'),
+    link_text: formData.get('link_text'),
+    link_href: formData.get('link_href'),
+    updated_at: new Date().toISOString(),
+  }).eq('id', existing!.id)
+  revalidatePath('/')
+  revalidatePath('/admin/content/closing-cta')
 }
 
 // ---------- Framework ----------

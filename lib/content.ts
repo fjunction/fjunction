@@ -18,15 +18,20 @@ export async function getHomepageContent() {
     supabase.from('home_hero').select('*').single(),
     supabase.from('home_signals_section').select('*').single(),
     supabase.from('home_signal_cards').select('*').order('sort_order'),
+    supabase.from('home_isolation_callout').select('*').single(),
     supabase.from('home_framework_section').select('*').single(),
     supabase.from('home_framework_steps').select('*').order('sort_order'),
+    supabase.from('home_system_section').select('*').single(),
+    supabase.from('home_system_tags').select('*').order('sort_order'),
+    supabase.from('home_system_nodes').select('*').order('sort_order'),
     supabase.from('home_panel_section').select('*').single(),
     supabase.from('home_panel_stats').select('*').order('sort_order'),
+    supabase.from('home_closing_cta').select('*').single(),
   ])
-  const tableNames = ['home_hero', 'home_signals_section', 'home_signal_cards', 'home_framework_section', 'home_framework_steps', 'home_panel_section', 'home_panel_stats']
+  const tableNames = ['home_hero', 'home_signals_section', 'home_signal_cards', 'home_isolation_callout', 'home_framework_section', 'home_framework_steps', 'home_system_section', 'home_system_tags', 'home_system_nodes', 'home_panel_section', 'home_panel_stats', 'home_closing_cta']
   results.forEach((r, i) => r.error && console.error(`[getHomepageContent] ${tableNames[i]} error:`, JSON.stringify(r.error)))
-  const [hero, signalsSection, signalCards, frameworkSection, frameworkSteps, panelSection, panelStats] = results.map((r) => r.data)
-  return { hero, signalsSection, signalCards, frameworkSection, frameworkSteps, panelSection, panelStats }
+  const [hero, signalsSection, signalCards, isolationCallout, frameworkSection, frameworkSteps, systemSection, systemTags, systemNodes, panelSection, panelStats, closingCta] = results.map((r) => r.data)
+  return { hero, signalsSection, signalCards, isolationCallout, frameworkSection, frameworkSteps, systemSection, systemTags, systemNodes, panelSection, panelStats, closingCta }
 }
 
 export async function getHowItWorksContent() {

@@ -23,28 +23,28 @@ export function ServicesHero({
   secondaryCtaHref?: string | null
 }) {
   return (
-    <section className="relative overflow-hidden bg-gray-50 py-20">
+    <section className="relative overflow-hidden bg-neutral-950 py-20">
       <div
-        className="absolute inset-0 opacity-40"
+        className="absolute inset-0 opacity-20"
         style={{
-          backgroundImage: 'linear-gradient(to right, #e5e7eb 1px, transparent 1px), linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(to right, #f97316 1px, transparent 1px), linear-gradient(to bottom, #f97316 1px, transparent 1px)',
           backgroundSize: '32px 32px',
         }}
       />
       <div className="relative mx-auto grid max-w-6xl gap-10 px-6 md:grid-cols-2 md:items-center">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-wide text-orange-600">{eyebrowText}</span>
-          <h1 className="mt-4 text-4xl font-bold leading-tight text-gray-900 sm:text-5xl">{heading}</h1>
-          {subheading && <p className="mt-5 max-w-md text-base text-gray-500">{subheading}</p>}
+          <span className="text-xs font-semibold uppercase tracking-wide text-orange-500">{eyebrowText}</span>
+          <h1 className="mt-4 text-4xl font-bold leading-tight text-white sm:text-5xl">{heading}</h1>
+          {subheading && <p className="mt-5 max-w-md text-base text-neutral-400">{subheading}</p>}
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
             {primaryCtaText && primaryCtaHref && (
-              <Link href={primaryCtaHref} className="rounded-full bg-gray-900 px-6 py-3 text-sm font-medium text-white hover:bg-gray-800">
+              <Link href={primaryCtaHref} className="rounded-full bg-orange-500 px-6 py-3 text-sm font-medium text-white hover:bg-orange-600">
                 {primaryCtaText}
               </Link>
             )}
             {secondaryCtaText && secondaryCtaHref && (
-              <Link href={secondaryCtaHref} className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-6 py-3 text-sm font-medium text-gray-900 hover:bg-gray-50">
+              <Link href={secondaryCtaHref} className="inline-flex items-center gap-2 rounded-full border border-neutral-700 px-6 py-3 text-sm font-medium text-white hover:bg-neutral-900">
                 <MessageCircle className="h-4 w-4" />
                 {secondaryCtaText}
               </Link>
@@ -52,11 +52,11 @@ export function ServicesHero({
           </div>
         </div>
 
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-neutral-800">
           {photoUrl ? (
             <Image src={photoUrl} alt={heading} fill className="object-cover" />
           ) : (
-            <div className="h-full w-full bg-gray-200" />
+            <div className="h-full w-full bg-neutral-900" />
           )}
         </div>
       </div>
