@@ -55,3 +55,25 @@ export async function getServicesContent() {
     const [hero, protocolSection, protocolCards, cta] = results.map((r) => r.data)
     return { hero, protocolSection, protocolCards, cta }
   }
+
+  export async function getPrivacyPolicyContent() {
+    const supabase = await createClient()
+    const [{ data: page, error: pageError }, { data: sections, error: sectionsError }] = await Promise.all([
+      supabase.from('privacy_policy_page').select('*').single(),
+      supabase.from('privacy_policy_sections').select('*').order('sort_order'),
+    ])
+    if (pageError) console.error('[getPrivacyPolicyContent] privacy_policy_page error:', JSON.stringify(pageError))
+    if (sectionsError) console.error('[getPrivacyPolicyContent] privacy_policy_sections error:', JSON.stringify(sectionsError))
+    return { page, sections }
+  }
+  
+  export async function getTermsContent() {
+    const supabase = await createClient()
+    const [{ data: page, error: pageError }, { data: sections, error: sectionsError }] = await Promise.all([
+      supabase.from('terms_page').select('*').single(),
+      supabase.from('terms_sections').select('*').order('sort_order'),
+    ])
+    if (pageError) console.error('[getTermsContent] terms_page error:', JSON.stringify(pageError))
+    if (sectionsError) console.error('[getTermsContent] terms_sections error:', JSON.stringify(sectionsError))
+    return { page, sections }
+  }

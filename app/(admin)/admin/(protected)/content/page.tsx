@@ -22,6 +22,11 @@ const SERVICES_SECTIONS = [
   { href: '/admin/content/services-cta', label: 'Services CTA', description: 'Closing heading, subheading, and button' },
 ]
 
+const LEGAL_SECTIONS = [
+  { href: '/admin/content/privacy-policy', label: 'Privacy Policy', description: 'Legal' },
+  { href: '/admin/content/terms', label: 'Terms of Service', description: 'Legal' },
+]
+
 function SectionGrid({ sections }: { sections: typeof HOMEPAGE_SECTIONS }) {
   return (
     <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -49,6 +54,9 @@ export default function ContentManagementPage() {
 
       <h2 className="mt-10 text-lg font-semibold text-gray-900">Services</h2>
       <SectionGrid sections={SERVICES_SECTIONS} />
+
+      <h2 className="mt-10 text-lg font-semibold text-gray-900">Services</h2>
+      <SectionGrid sections={LEGAL_SECTIONS} />
     </div>
   )
 }

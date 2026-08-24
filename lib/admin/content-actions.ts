@@ -293,3 +293,43 @@ export async function updateHowItWorksHero(formData: FormData) {
     revalidatePath('/services')
     revalidatePath('/admin/content/services-cta')
   }
+
+  export async function updatePrivacyPolicy(formData: FormData) {
+    const supabase = await createClient()
+    const { data: existing } = await supabase.from('privacy_policy_page').select('id').single()
+  
+    await supabase.from('privacy_policy_page').update({
+      heading: formData.get('heading'),
+      effective_date_label: formData.get('effective_date_label'),
+      updated_at: new Date().toISOString(),
+    }).eq('id', existing!.id)
+  
+    const sections = JSON.parse(formData.get('sections') as string)
+    await supabase.from('privacy_policy_sections').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    if (sections.length > 0) {
+      await supabase.from('privacy_policy_sections').insert(sections.map((s: any, i: number) => ({ ...s, sort_order: i + 1 })))
+    }
+  
+    revalidatePath('/privacy-policy')
+    revalidatePath('/admin/content/privacy-policy')
+  }
+  
+  export async function updateTerms(formData: FormData) {
+    const supabase = await createClient()
+    const { data: existing } = await supabase.from('terms_page').select('id').single()
+  
+    await supabase.from('terms_page').update({
+      heading: formData.get('heading'),
+      updated_label: formData.get('updated_label'),
+      updated_at: new Date().toISOString(),
+    }).eq('id', existing!.id)
+  
+    const sections = JSON.parse(formData.get('sections') as string)
+    await supabase.from('terms_sections').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    if (sections.length > 0) {
+      await supabase.from('terms_sections').insert(sections.map((s: any, i: number) => ({ ...s, sort_order: i + 1 })))
+    }
+  
+    revalidatePath('/terms-of-service')
+    revalidatePath('/admin/content/terms')
+  }
