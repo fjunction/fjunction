@@ -48,13 +48,20 @@ export async function updateHeader(formData: FormData) {
 }
 
 // ---------- Hero ----------
+// lib/admin/content-actions.ts — updateHero, with logging
 export async function updateHero(formData: FormData) {
   const supabase = await createClient()
-  const { data: existing } = await supabase.from('home_hero').select('id').single()
+  const { data: existing, error: fetchError } = await supabase.from('home_hero').select('id').single()
+
+  if (fetchError || !existing) {
+    console.error('[updateHero] fetch error:', JSON.stringify(fetchError))
+    throw new Error('Could not load the existing hero row.')
+  }
+
   const photoFile = formData.get('photo_file') as File | null
   const photoUrl = await uploadImageIfProvided(supabase, photoFile, 'hero-photo')
 
-  await supabase.from('home_hero').update({
+  const { error: updateError } = await supabase.from('home_hero').update({
     tag_line: formData.get('tag_line'),
     heading: formData.get('heading'),
     subheading: formData.get('subheading'),
@@ -66,7 +73,12 @@ export async function updateHero(formData: FormData) {
     secondary_cta_text: formData.get('secondary_cta_text'),
     secondary_cta_href: formData.get('secondary_cta_href'),
     updated_at: new Date().toISOString(),
-  }).eq('id', existing!.id)
+  }).eq('id', existing.id)
+
+  if (updateError) {
+    console.error('[updateHero] update error:', JSON.stringify(updateError))
+    throw new Error(`Failed to save hero content: ${updateError.message}`)
+  }
 
   revalidatePath('/')
   revalidatePath('/admin/content/hero')
