@@ -82,3 +82,27 @@ export async function getServicesContent() {
     if (sectionsError) console.error('[getTermsContent] terms_sections error:', JSON.stringify(sectionsError))
     return { page, sections }
   }
+
+  export async function getProgramAssessmentContent() {
+    const supabase = await createClient()
+    const [{ data: page, error: pageError }, { data: steps, error: stepsError }] = await Promise.all([
+      supabase.from('program_assessment_page').select('*').single(),
+      supabase.from('program_assessment_steps').select('*').order('sort_order'),
+    ])
+    if (pageError) console.error('[getProgramAssessmentContent] program_assessment_page error:', JSON.stringify(pageError))
+    if (stepsError) console.error('[getProgramAssessmentContent] program_assessment_steps error:', JSON.stringify(stepsError))
+    return { page, steps }
+  }
+  
+  export async function getProgramMentorshipContent() {
+    const supabase = await createClient()
+    const [{ data: page, error: pageError }, { data: benefits, error: benefitsError }, { data: pricingOptions, error: pricingError }] = await Promise.all([
+      supabase.from('program_mentorship_page').select('*').single(),
+      supabase.from('program_mentorship_benefits').select('*').order('sort_order'),
+      supabase.from('program_mentorship_pricing_options').select('*').order('sort_order'),
+    ])
+    if (pageError) console.error('[getProgramMentorshipContent] program_mentorship_page error:', JSON.stringify(pageError))
+    if (benefitsError) console.error('[getProgramMentorshipContent] program_mentorship_benefits error:', JSON.stringify(benefitsError))
+    if (pricingError) console.error('[getProgramMentorshipContent] program_mentorship_pricing_options error:', JSON.stringify(pricingError))
+    return { page, benefits, pricingOptions }
+  }

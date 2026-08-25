@@ -36,15 +36,15 @@ export default async function HeaderContentPage() {
         </label>
 
         <div>
-          <span className="mb-2 block text-sm font-medium text-gray-700">Nav links</span>
-          <RepeatableListEditor
+          <span className="mb-2 block text-sm font-medium text-gray-700">Nav links (JSON)</span>
+          <p className="mb-2 text-xs text-gray-500">
+            Each item: {'{"label", "href"}'}, optionally with a "children" array of {'{"label", "href"}'} for a dropdown submenu.
+          </p>
+          <textarea
             name="nav_items"
-            initialItems={header?.nav_items ?? []}
-            emptyItem={{ label: '', href: '' }}
-            fields={[
-              { key: 'label', label: 'Label' },
-              { key: 'href', label: 'Link' },
-            ]}
+            defaultValue={JSON.stringify(header?.nav_items ?? [], null, 2)}
+            rows={12}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-xs"
           />
         </div>
 

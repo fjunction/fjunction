@@ -27,6 +27,11 @@ const LEGAL_SECTIONS = [
   { href: '/admin/content/terms', label: 'Terms of Service', description: 'Legal' },
 ]
 
+const PROGRAM_SECTIONS = [
+  { href: '/admin/content/program-assessment', label: 'Nutrition Clarity Strategy', description: 'Hero, about, audience, structure steps, exclusions, pricing, and note' },
+  { href: '/admin/content/program-mentorship', label: 'Ultimate Health Mentorship', description: 'Hero, about, benefits checklist, pricing options, and note' },
+]
+
 function SectionGrid({ sections }: { sections: typeof HOMEPAGE_SECTIONS }) {
   return (
     <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -54,6 +59,9 @@ export default function ContentManagementPage() {
 
       <h2 className="mt-10 text-lg font-semibold text-gray-900">Services</h2>
       <SectionGrid sections={SERVICES_SECTIONS} />
+
+      <h2 className="mt-10 text-lg font-semibold text-gray-900">Services</h2>
+      <SectionGrid sections={PROGRAM_SECTIONS} />
 
       <h2 className="mt-10 text-lg font-semibold text-gray-900">Services</h2>
       <SectionGrid sections={LEGAL_SECTIONS} />

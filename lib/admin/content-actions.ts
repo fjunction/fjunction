@@ -320,15 +320,70 @@ export async function updateHowItWorksHero(formData: FormData) {
     revalidatePath('/admin/content/services-protocol')
   }
   
+  export async function updateProgramAssessment(formData: FormData) {
+    const supabase = await createClient()
+    const { data: existing } = await supabase.from('program_assessment_page').select('id').single()
+  
+    await supabase.from('program_assessment_page').update({
+      badge_text: formData.get('badge_text'), heading: formData.get('heading'), conducted_by: formData.get('conducted_by'),
+      fee_text: formData.get('fee_text'), format_text: formData.get('format_text'), timeline_text: formData.get('timeline_text'),
+      primary_cta_text: formData.get('primary_cta_text'), primary_cta_href: formData.get('primary_cta_href'),
+      secondary_cta_text: formData.get('secondary_cta_text'), secondary_cta_href: formData.get('secondary_cta_href'),
+      about_heading: formData.get('about_heading'), about_body: formData.get('about_body'),
+      audience_heading: formData.get('audience_heading'), audience_body: formData.get('audience_body'),
+      structure_heading: formData.get('structure_heading'),
+      exclusions_heading: formData.get('exclusions_heading'), exclusions_body: formData.get('exclusions_body'),
+      pricing_fee_text: formData.get('pricing_fee_text'), pricing_includes_body: formData.get('pricing_includes_body'), pricing_timeline_text: formData.get('pricing_timeline_text'),
+      note_heading: formData.get('note_heading'), note_body: formData.get('note_body'),
+      cta_heading: formData.get('cta_heading'), cta_subheading: formData.get('cta_subheading'),
+      cta_text: formData.get('cta_text'), cta_href: formData.get('cta_href'),
+      updated_at: new Date().toISOString(),
+    }).eq('id', existing!.id)
+  
+    const steps = JSON.parse(formData.get('steps') as string)
+    await supabase.from('program_assessment_steps').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    if (steps.length > 0) await supabase.from('program_assessment_steps').insert(steps.map((s: any, i: number) => ({ ...s, sort_order: i + 1 })))
+  
+    revalidatePath('/services/nutrition-clarity-strategy')
+    revalidatePath('/admin/content/program-assessment')
+  }
+  
+  export async function updateProgramMentorship(formData: FormData) {
+    const supabase = await createClient()
+    const { data: existing } = await supabase.from('program_mentorship_page').select('id').single()
+  
+    await supabase.from('program_mentorship_page').update({
+      badge_text: formData.get('badge_text'), heading: formData.get('heading'), subheading: formData.get('subheading'), mentor_name: formData.get('mentor_name'),
+      primary_cta_text: formData.get('primary_cta_text'), primary_cta_href: formData.get('primary_cta_href'),
+      secondary_cta_text: formData.get('secondary_cta_text'), secondary_cta_href: formData.get('secondary_cta_href'),
+      about_body: formData.get('about_body'), benefits_heading: formData.get('benefits_heading'), pricing_heading: formData.get('pricing_heading'),
+      note_heading: formData.get('note_heading'), note_body: formData.get('note_body'),
+      cta_heading: formData.get('cta_heading'), cta_subheading: formData.get('cta_subheading'),
+      cta_text: formData.get('cta_text'), cta_href: formData.get('cta_href'),
+      updated_at: new Date().toISOString(),
+    }).eq('id', existing!.id)
+  
+    const benefits = JSON.parse(formData.get('benefits') as string)
+    await supabase.from('program_mentorship_benefits').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    if (benefits.length > 0) await supabase.from('program_mentorship_benefits').insert(benefits.map((b: any, i: number) => ({ ...b, sort_order: i + 1 })))
+  
+    const pricingOptions = JSON.parse(formData.get('pricing_options') as string)
+    await supabase.from('program_mentorship_pricing_options').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    if (pricingOptions.length > 0) await supabase.from('program_mentorship_pricing_options').insert(pricingOptions.map((p: any, i: number) => ({ ...p, sort_order: i + 1 })))
+  
+    revalidatePath('/services/mentorship-program')
+    revalidatePath('/admin/content/program-mentorship')
+  }
+  
+  // Replace the existing updateServicesCta with this version (new fields)
   export async function updateServicesCta(formData: FormData) {
     const supabase = await createClient()
     const { data: existing } = await supabase.from('services_cta').select('id').single()
   
     await supabase.from('services_cta').update({
-      heading: formData.get('heading'),
-      subheading: formData.get('subheading'),
-      cta_text: formData.get('cta_text'),
-      cta_href: formData.get('cta_href'),
+      heading: formData.get('heading'), subheading: formData.get('subheading'),
+      primary_cta_text: formData.get('primary_cta_text'), primary_cta_href: formData.get('primary_cta_href'),
+      secondary_cta_text: formData.get('secondary_cta_text'), secondary_cta_href: formData.get('secondary_cta_href'),
       updated_at: new Date().toISOString(),
     }).eq('id', existing!.id)
   
@@ -375,3 +430,5 @@ export async function updateHowItWorksHero(formData: FormData) {
     revalidatePath('/terms-of-service')
     revalidatePath('/admin/content/terms')
   }
+
+  

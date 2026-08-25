@@ -44,8 +44,7 @@ export function ServicesHero({
               </Link>
             )}
             {secondaryCtaText && secondaryCtaHref && (
-              <Link href={secondaryCtaHref} className="inline-flex items-center gap-2 rounded-full border border-neutral-700 px-6 py-3 text-sm font-medium text-white hover:bg-neutral-900">
-                <MessageCircle className="h-4 w-4" />
+              <Link href={secondaryCtaHref} className="rounded-full border border-neutral-700 px-6 py-3 text-sm font-medium text-white hover:bg-neutral-900">
                 {secondaryCtaText}
               </Link>
             )}
