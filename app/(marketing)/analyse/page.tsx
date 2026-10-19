@@ -3,8 +3,8 @@ import { AnalyseForm } from '@/components/site/AnalyseForm'
 
 export default function AnalysePage() {
   return (
-    <>
-      <section className="relative overflow-hidden bg-neutral-950 py-16">
+    <div className="bg-neutral-950">
+      <section className="relative overflow-hidden py-16">
         <div
           className="absolute inset-0 opacity-20"
           style={{
@@ -22,6 +22,6 @@ export default function AnalysePage() {
       </section>
 
       <AnalyseForm />
-    </>
+    </div>
   )
 }
